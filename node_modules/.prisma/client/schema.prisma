@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tournament {
+  id          String   @id @default(uuid())
+  name        String
+  sourceUrl   String
+  source      String
+  location    String
+  city        String
+  state       String
+  startDate   DateTime
+  endDate     DateTime
+  skillLevels String[]
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
