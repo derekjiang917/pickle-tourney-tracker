@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model Tournament {
@@ -16,8 +16,22 @@ model Tournament {
   state       String
   startDate   DateTime
   endDate     DateTime
-  skillLevels String[]
+  skillLevels String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([sourceUrl])
+}
+
+model ScrapeLog {
+  id              String   @id @default(uuid())
+  source          String
+  startTime       DateTime @default(now())
+  endTime         DateTime?
+  tournamentsFound Int     @default(0)
+  errors          String?
+  status          String   @default("running")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

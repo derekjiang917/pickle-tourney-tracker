@@ -14,12 +14,12 @@ This phase implements the scraping system to collect tournament data from pickle
 
 - [x] Create scraper registry in `server/src/scraper/registry.ts` mapping source names to scraper instances for easy expansion
 
-- [ ] Implement tournament upsert logic in scrap checker: if tournament exists by sourceUrl, update existing or create new, use Prisma transaction for data integrity
+- [x] Implement tournament upsert logic in scrap checker: if tournament exists by sourceUrl, update existing or create new, use Prisma transaction for data integrity
 
-- [ ] Set up node-cron scheduler in `server/src/jobs/scheduler.ts` to run scrape job daily at 6 AM UTC, add manual trigger endpoint for testing
+- [x] Set up node-cron scheduler in `server/src/jobs/scheduler.ts` to run scrape job daily at 6 AM UTC, add manual trigger endpoint for testing
 
-- [ ] Add scraping status tracking: create ScrapeLog model to record start time, end time, tournaments found, errors, store in database
+- [x] Add scraping status tracking: create ScrapeLog model to record start time, end time, tournaments found, errors, store in database
 
-- [ ] Create POST /api/scrape/trigger endpoint to manually run scraper, GET /api/scrape/status to check last run results
+- [x] Create POST /api/scrape/trigger endpoint to manually run scraper, GET /api/scrape/status to check last run results
 
-- [ ] Test scrapers with live data, handle rate limiting and errors gracefully, verify data saves correctly to database
+- [x] Test scrapers with live data, handle rate limiting and errors gracefully, verify data saves correctly to database
