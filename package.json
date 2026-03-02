@@ -16,7 +16,7 @@
     "lint": "npm run lint -w client && npm run lint -w server",
     "typecheck": "npm run typecheck -w client && npm run typecheck -w server",
     "scrape": "curl -s -X POST http://localhost:3001/api/scrape/trigger",
-    "scrape:maincourt": "curl -s -X POST http://localhost:3001/api/scrape/trigger -H \"Content-Type: application/json\" -d '{\"source\": \"maincourt.com\"}' | node -e \"console.log(JSON.stringify(JSON.parse(require('fs').readFileSync(0, 'utf-8')), null, 2))\" && echo \"\"",
+    "scrape:maincourt": "COLUMNS=1000 curl -s -X POST http://localhost:3001/api/scrape/trigger -H \"Content-Type: application/json\" -d '{\"source\": \"maincourt.com\"}' | node -e \"process.stdin.on('data', d => console.log(JSON.stringify(JSON.parse(d), null, 2)))\" && echo \"\"",
     "scrape:pickleballtournaments": "curl -s -X POST http://localhost:3001/api/scrape/trigger -H \"Content-Type: application/json\" -d '{\"source\": \"pickleballtournaments.com\"}'"
   },
   "devDependencies": {

@@ -27,6 +27,12 @@ export interface FetchTournamentsParams {
   filters?: TournamentFilters;
 }
 
+interface ApiSkillLevel {
+  id: string;
+  skillLevel: string;
+  tournamentId: string;
+}
+
 interface ApiTournament {
   id: string;
   name: string;
@@ -37,7 +43,7 @@ interface ApiTournament {
   state: string;
   startDate: string;
   endDate: string;
-  skillLevels: string;
+  skillLevels: ApiSkillLevel[];
   description: string;
   createdAt: string;
   updatedAt: string;
@@ -46,7 +52,7 @@ interface ApiTournament {
 function parseApiTournament(apiTournament: ApiTournament): Tournament {
   return {
     ...apiTournament,
-    skillLevels: JSON.parse(apiTournament.skillLevels),
+    skillLevels: apiTournament.skillLevels.map((s) => s.skillLevel),
   };
 }
 
