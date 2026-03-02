@@ -7,6 +7,7 @@ import {
   startScheduler,
   stopScheduler,
 } from '../jobs/scheduler.js';
+import { clearCache } from '../middleware/cache.js';
 
 const router = Router();
 
@@ -19,6 +20,7 @@ router.post('/trigger', async (req: Request, res: Response, next: NextFunction) 
     }
 
     const result = await runScrapeJob();
+    clearCache('/api/tournaments');
 
     res.json({
       success: result.success,
