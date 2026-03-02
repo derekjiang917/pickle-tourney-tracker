@@ -1,141 +1,136 @@
+import { useState, useEffect } from 'react';
 import { Tournament } from '@/types/tournament';
-import { TournamentCard } from './TournamentCard';
+import { fetchTournaments, TournamentFilters } from '@/lib/api';
+import { TournamentCard, TournamentCardSkeleton } from './TournamentCard';
+import { Pagination } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
+import { SearchX } from 'lucide-react';
+import { FilterState } from '@/components/filters/FilterPanel';
 
-const mockTournaments: Tournament[] = [
-  {
-    id: '1',
-    name: 'Summer Classic Pickleball Tournament',
-    sourceUrl: 'https://example.com/tournament1',
-    source: 'PickleballTournaments.com',
-    location: 'Sunset Sports Complex',
-    city: 'Phoenix',
-    state: 'AZ',
-    startDate: '2026-03-15',
-    endDate: '2026-03-17',
-    skillLevels: ['3.0', '3.5', '4.0', '4.5'],
-    description: 'Annual summer tournament featuring multiple skill divisions. Food vendors and prizes included.',
-    createdAt: '2026-01-15T10:00:00Z',
-    updatedAt: '2026-01-15T10:00:00Z',
-  },
-  {
-    id: '2',
-    name: 'Winter Indoor Championship',
-    sourceUrl: 'https://example.com/tournament2',
-    source: 'USAPA',
-    location: 'Indoor Sports Arena',
-    city: 'Denver',
-    state: 'CO',
-    startDate: '2026-04-01',
-    endDate: '2026-04-02',
-    skillLevels: ['2.5', '3.0', '3.5'],
-    description: 'Indoor winter championship. All skill levels welcome.',
-    createdAt: '2026-01-20T10:00:00Z',
-    updatedAt: '2026-01-20T10:00:00Z',
-  },
-  {
-    id: '3',
-    name: 'Memorial Day Mixed Doubles',
-    sourceUrl: 'https://example.com/tournament3',
-    source: 'PickleballTournaments.com',
-    location: 'Riverside Courts',
-    city: 'Austin',
-    state: 'TX',
-    startDate: '2026-05-24',
-    endDate: '2026-05-26',
-    skillLevels: ['All Levels'],
-    description: 'Mixed doubles tournament open to all skill levels. Registration includes lunch.',
-    createdAt: '2026-02-01T10:00:00Z',
-    updatedAt: '2026-02-01T10:00:00Z',
-  },
-  {
-    id: '4',
-    name: 'Pacific Northwest Open',
-    sourceUrl: 'https://example.com/tournament4',
-    source: 'USAPA',
-    location: 'Seattle Tennis Center',
-    city: 'Seattle',
-    state: 'WA',
-    startDate: '2026-06-10',
-    endDate: '2026-06-12',
-    skillLevels: ['3.0', '3.5', '4.0', '4.5', '5.0'],
-    description: 'Premier Pacific Northwest tournament with cash prizes.',
-    createdAt: '2026-02-15T10:00:00Z',
-    updatedAt: '2026-02-15T10:00:00Z',
-  },
-  {
-    id: '5',
-    name: 'Florida State Championships',
-    sourceUrl: 'https://example.com/tournament5',
-    source: 'Florida Pickleball',
-    location: 'Bradenton Sports Complex',
-    city: 'Bradenton',
-    state: 'FL',
-    startDate: '2026-07-20',
-    endDate: '2026-07-25',
-    skillLevels: ['2.5', '3.0', '3.5', '4.0', '4.5', '5.0'],
-    description: 'State championships with over 200 teams expected.',
-    createdAt: '2026-03-01T10:00:00Z',
-    updatedAt: '2026-03-01T10:00:00Z',
-  },
-  {
-    id: '6',
-    name: 'Labor Day Weekend Tournament',
-    sourceUrl: 'https://example.com/tournament6',
-    source: 'PickleballTournaments.com',
-    location: 'Central Park Courts',
-    city: 'San Diego',
-    state: 'CA',
-    startDate: '2026-09-05',
-    endDate: '2026-09-07',
-    skillLevels: ['3.0', '3.5', '4.0'],
-    description: 'Annual Labor Day tournament with beach activities.',
-    createdAt: '2026-03-01T10:00:00Z',
-    updatedAt: '2026-03-01T10:00:00Z',
-  },
-];
-
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 12;
 
 interface TournamentListProps {
-  currentPage?: number;
-  onPageChange?: (page: number) => void;
+  filters: FilterState;
+  currentPage: number;
+  onPageChange: (page: number) => void;
+  hasActiveFilters: boolean;
+  onClearFilters: () => void;
 }
 
-export function TournamentList({ currentPage = 1, onPageChange }: TournamentListProps) {
-  const totalPages = Math.ceil(mockTournaments.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const paginatedTournaments = mockTournaments.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+interface ScrapeStatus {
+  lastRun: {
+    endTime: string;
+  } | null;
+}
+
+export function TournamentList({ 
+  filters, 
+  currentPage, 
+  onPageChange,
+  hasActiveFilters,
+  onClearFilters,
+}: TournamentListProps) {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    const loadTournaments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const apiFilters: TournamentFilters = {
+          location: filters.location || undefined,
+          startDate: filters.startDate || undefined,
+          endDate: filters.endDate || undefined,
+          skillLevels: filters.skillLevels.length > 0 ? filters.skillLevels : undefined,
+        };
+        
+        const response = await fetchTournaments({
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          filters: apiFilters,
+        });
+        setTournaments(response.data);
+        setTotalPages(response.pagination.totalPages);
+        setTotal(response.pagination.total);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load tournaments');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTournaments();
+  }, [filters, currentPage]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
+            <TournamentCardSkeleton key={index} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-4">
+        <div className="text-destructive">Error: {error}</div>
+        <Button variant="outline" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (tournaments.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <SearchX className="w-16 h-16 text-muted-foreground" />
+        <h3 className="text-xl font-semibold">No tournaments found</h3>
+        <p className="text-muted-foreground text-center max-w-md">
+          {hasActiveFilters 
+            ? "We couldn't find any tournaments matching your current filters. Try adjusting your search criteria."
+            : "There are no tournaments available at the moment. Check back later!"
+          }
+        </p>
+        {hasActiveFilters && (
+          <Button variant="outline" onClick={onClearFilters}>
+            Clear Filters
+          </Button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {paginatedTournaments.map((tournament) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {tournaments.map((tournament) => (
           <TournamentCard key={tournament.id} tournament={tournament} />
         ))}
       </div>
       
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            disabled={currentPage === 1}
-            onClick={() => onPageChange?.(currentPage - 1)}
-          >
-            Previous
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            disabled={currentPage === totalPages}
-            onClick={() => onPageChange?.(currentPage + 1)}
-          >
-            Next
-          </Button>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        total={total}
+        onPageChange={onPageChange}
+      />
     </div>
   );
+}
+
+export async function fetchScrapeStatus(): Promise<ScrapeStatus> {
+  const response = await fetch('http://localhost:3001/api/scrape/status');
+  if (!response.ok) {
+    throw new Error('Failed to fetch scrape status');
+  }
+  return response.json();
 }
