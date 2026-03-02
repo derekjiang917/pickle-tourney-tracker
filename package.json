@@ -17,7 +17,11 @@
     "typecheck": "npm run typecheck -w client && npm run typecheck -w server",
     "scrape": "curl -s -X POST http://localhost:3001/api/scrape/trigger",
     "scrape:maincourt": "COLUMNS=1000 curl -s -X POST http://localhost:3001/api/scrape/trigger -H \"Content-Type: application/json\" -d '{\"source\": \"maincourt.com\"}' | node -e \"process.stdin.on('data', d => console.log(JSON.stringify(JSON.parse(d), null, 2)))\" && echo \"\"",
-    "scrape:pickleballtournaments": "curl -s -X POST http://localhost:3001/api/scrape/trigger -H \"Content-Type: application/json\" -d '{\"source\": \"pickleballtournaments.com\"}'"
+    "scrape:pickleballtournaments": "curl -s -X POST http://localhost:3001/api/scrape/trigger -H \"Content-Type: application/json\" -d '{\"source\": \"pickleballtournaments.com\"}' | node -e \"process.stdin.on('data', d => console.log(JSON.stringify(JSON.parse(d), null, 2)))\" && echo \"\"",
+    "scrape:start": "curl -s -X POST http://localhost:3001/api/scrape/scheduler/start",
+    "scrape:stop": "curl -s -X POST http://localhost:3001/api/scrape/scheduler/stop",
+    "scrape:status": "curl -s http://localhost:3001/api/scrape/status | node -e \"process.stdin.on('data', d => console.log(JSON.stringify(JSON.parse(d), null, 2)))\" && echo \"\"",
+    "scrape:history": "curl -s http://localhost:3001/api/scrape/history | node -e \"process.stdin.on('data', d => console.log(JSON.stringify(JSON.parse(d), null, 2)))\" && echo \"\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

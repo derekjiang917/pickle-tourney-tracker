@@ -58,33 +58,57 @@ npm run dev:client
 
 ## Running the Scraper (Cron Job)
 
-### Trigger a manual scrape
+### Trigger a scrape for all sources
 
 ```bash
-curl -X POST http://localhost:3001/api/scrape/trigger
+npm run scrape
+```
+
+### Trigger a scrape for a specific source
+
+```bash
+# Scrape maincourt.com only
+npm run scrape:maincourt
+
+# Scrape pickleballtournaments.com only
+npm run scrape:pickleballtournaments
+```
+
+You can also use curl directly:
+
+```bash
+curl -X POST http://localhost:3001/api/scrape/trigger -H "Content-Type: application/json" -d '{"source": "maincourt.com"}'
 ```
 
 ### Start the scheduled cron (runs daily at 6 AM UTC)
 
 ```bash
+npm run scrape:start
+# or
 curl -X POST http://localhost:3001/api/scrape/scheduler/start
 ```
 
 ### Stop the scheduled cron
 
 ```bash
+npm run scrape:stop
+# or
 curl -X POST http://localhost:3001/api/scrape/scheduler/stop
 ```
 
 ### Check scrape status
 
 ```bash
+npm run scrape:status
+# or
 curl http://localhost:3001/api/scrape/status
 ```
 
 ### View scrape history
 
 ```bash
+npm run scrape:history
+# or
 curl http://localhost:3001/api/scrape/history
 ```
 
