@@ -3,28 +3,33 @@ import { BaseScraper, ScrapedTournament, parseDate, parseSkillLevels, extractCit
 
 export class MaincourtScraper extends BaseScraper {
   readonly sourceName = 'maincourt.com';
-  readonly baseUrl = 'https://www.maincourt.com';
+  readonly baseUrl = 'https://maincourt.com';
 
   async scrape(): Promise<ScrapedTournament[]> {
     const tournaments: ScrapedTournament[] = [];
 
     try {
-      const $ = await this.fetchHtmlWithRetry(`${this.baseUrl}/tournaments`);
+      const $ = await this.fetchHtmlWithRetry(`${this.baseUrl}/events-list/tournaments/`);
 
-      const tournamentCards = $('[class*="tournament"], [class*="event"], .tournament-card, .event-card, a[href*="/tournament/"], a[href*="/events/"]');
+      const tournamentCards = $('.tournamentslisting__card');
+      console.log(`Found ${tournamentCards.length} tournament card elements`);
 
       if (tournamentCards.length > 0) {
         const seenUrls = new Set<string>();
 
         tournamentCards.each((_, element) => {
-          const href = $(element).attr('href');
-          if (href && (href.includes('/tournament/') || href.includes('/events/'))) {
+          const card = $(element);
+          const link = card.find('.tournamentslisting__card__top__link, .tournamentslisting__card__content__link').first();
+          const href = link.attr('href');
+          if (href && href.includes('/events-list/')) {
             const fullUrl = href.startsWith('http') ? href : `${this.baseUrl}${href}`;
             if (!seenUrls.has(fullUrl)) {
               seenUrls.add(fullUrl);
             }
           }
         });
+
+        console.log(`Found ${seenUrls.size} unique tournament URLs`);
 
         for (const url of Array.from(seenUrls)) {
           try {
@@ -38,16 +43,6 @@ export class MaincourtScraper extends BaseScraper {
         }
       }
 
-      const jsonData = this.extractJsonData($);
-      if (jsonData.tournaments && Array.isArray(jsonData.tournaments)) {
-        for (const t of jsonData.tournaments) {
-          const tournament = this.parseJsonTournament(t);
-          if (tournament) {
-            tournaments.push(tournament);
-          }
-        }
-      }
-
     } catch (error) {
       console.error('Error in maincourt scraper:', error);
     }
@@ -56,7 +51,6 @@ export class MaincourtScraper extends BaseScraper {
   }
 
   private async fetchHtmlWithRetry(url: string, maxRetries: number = 3): Promise<cheerio.Root> {
-    const { default: cheerio } = await import('cheerio');
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -65,7 +59,13 @@ export class MaincourtScraper extends BaseScraper {
         try {
           const page = await browser.newPage();
           await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-          await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
+          await page.goto(url, { waitUntil: 'load', timeout: 120000 });
+          
+          try {
+            await page.waitForSelector('.tournamentslisting__card, [class*="tournament"]', { timeout: 30000 });
+          } catch {
+            console.log('Tournament elements not found, continuing with whatever loaded');
+          }
           
           const html = await page.content();
           return cheerio.load(html);
@@ -75,7 +75,7 @@ export class MaincourtScraper extends BaseScraper {
       } catch (error) {
         lastError = error as Error;
         if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+          await new Promise(resolve => setTimeout(resolve, 3000 * attempt));
         }
       }
     }
@@ -87,11 +87,9 @@ export class MaincourtScraper extends BaseScraper {
     try {
       const $ = await this.fetchHtmlWithRetry(url);
       
-      const name = sanitizeString($('h1').first().text()) || 
-                   sanitizeString($('[class*="title"]').first().text()) ||
-                   sanitizeString($('[class*="name"]').first().text()) ||
-                   sanitizeString($('title').text().split('|')[0]);
-      
+      const nameRaw = $('.division__title').first().text();
+      const name = sanitizeString(nameRaw.replace(/· Tournament Details$/, '').replace(/🏆/, '').trim());
+       
       if (!name) {
         return null;
       }
@@ -100,50 +98,28 @@ export class MaincourtScraper extends BaseScraper {
       let city = '';
       let state = '';
       
-      const locationSelectors = [
-        '[class*="venue"]',
-        '[class*="location"]',
-        '[class*="address"]',
-        '[class*="Where"]',
-        'span:contains("Where")',
-        '[data-testid*="location"]',
-      ];
+      const locationItem = $('.division__card__list__item').filter((_, el) => {
+        return $(el).find('.icon-new-map-pin').length > 0;
+      });
       
-      for (const selector of locationSelectors) {
-        const locationText = $(selector).first().text().trim();
-        if (locationText && locationText.length > 2) {
-          location = locationText;
-          const { city: c, state: s } = extractCityState(location);
-          city = c;
-          state = s;
-          break;
-        }
+      if (locationItem.length > 0) {
+        const venueLink = locationItem.find('.division__card__list__item__link');
+        location = venueLink.length > 0 ? sanitizeString(venueLink.text()) : sanitizeString(locationItem.text());
+        const { city: c, state: s } = extractCityState(location);
+        city = c;
+        state = s;
       }
 
       let startDate = new Date();
       let endDate = new Date();
       
-      const dateSelectors = [
-        '[class*="date"]',
-        '[class*="time"]',
-        '[class*="When"]',
-        '[data-testid*="date"]',
-        'time',
-      ];
+      const dateItem = $('.division__card__list__item').filter((_, el) => {
+        return $(el).find('.icon-new-calendar').length > 0;
+      });
       
-      for (const selector of dateSelectors) {
-        const dateText = $(selector).first().text().trim();
+      if (dateItem.length > 0) {
+        const dateText = dateItem.text().trim();
         const dates = this.extractDates(dateText);
-        if (dates.startDate) {
-          startDate = dates.startDate;
-          endDate = dates.endDate || dates.startDate;
-          break;
-        }
-      }
-
-      const dateFromPage = $('body').text().match(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{1,2},?\s+\d{4}\b.*?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{1,2},?\s+\d{4}\b|\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/);
-      if (dateFromPage) {
-        const dates = this.extractDates(dateFromPage[0]);
         if (dates.startDate) {
           startDate = dates.startDate;
           endDate = dates.endDate || dates.startDate;
@@ -151,21 +127,20 @@ export class MaincourtScraper extends BaseScraper {
       }
 
       let registrationUrl: string | undefined;
-      const registerBtn = $('a:contains("Register"), [class*="register"] a, button:contains("Register"), a[href*="register"]');
-      if (registerBtn.length > 0) {
-        const href = registerBtn.attr('href');
+      const registerLinks = $('a[href*="register"], a:contains("Register")');
+      if (registerLinks.length > 0) {
+        const href = registerLinks.first().attr('href');
         if (href) {
           registrationUrl = href.startsWith('http') ? href : `${this.baseUrl}${href}`;
         }
       }
 
       const skillLevels: string[] = [];
-      const pageText = $('body').text();
-      const extractedSkills = parseSkillLevels(pageText);
+      const skillText = $('.divi__row__left__list .icon-ball').parent().text();
+      const extractedSkills = parseSkillLevels(skillText);
       skillLevels.push(...extractedSkills);
 
-      const description = sanitizeString($('[class*="description"], [class*="about"], [class*="details"]').first().text()) || 
-                        sanitizeString($('meta[name="description"]').attr('content'));
+      const description = sanitizeString($('.division__notes__inner').first().text());
 
       return this.createTournament({
         name,

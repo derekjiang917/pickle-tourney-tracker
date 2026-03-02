@@ -9,41 +9,54 @@ export class PickleballTournamentsScraper extends BaseScraper {
     const tournaments: ScrapedTournament[] = [];
     
     try {
-      const $ = await this.fetchHtmlWithRetry(`${this.baseUrl}/search`);
+      const baseUrl = 'https://pickleballtournaments.com/search?tournament_filter=now_registering&show_all=true&zoom_level=7';
+      const maxPages = 5;
       
-      const tournamentCards = $('[class*="cursor-pointer"][href*="/tournaments/"]');
-      
-      if (tournamentCards.length > 0) {
-        const seenUrls = new Set<string>();
+      for (let page = 1; page <= maxPages; page++) {
+        const url = `${baseUrl}&current_page=${page}`;
+        console.log(`Scraping page ${page}: ${url}`);
         
-        tournamentCards.each((_, element) => {
-          const href = $(element).attr('href');
-          if (href && href.includes('/tournaments/') && href !== '/tournaments') {
-            const fullUrl = href.startsWith('http') ? href : `${this.baseUrl}${href}`;
-            if (!seenUrls.has(fullUrl)) {
-              seenUrls.add(fullUrl);
+        const $ = await this.fetchHtmlWithRetry(url);
+        
+        const tournamentCards = $('[class*="cursor-pointer"][href*="/tournaments/"]');
+        console.log(`Found ${tournamentCards.length} tournament card elements on page ${page}`);
+        
+        if (tournamentCards.length > 0) {
+          const seenUrls = new Set<string>();
+          
+          tournamentCards.each((_, element) => {
+            const href = $(element).attr('href');
+            if (href && href.includes('/tournaments/') && href !== '/tournaments') {
+              const fullUrl = href.startsWith('http') ? href : `${this.baseUrl}${href}`;
+              if (!seenUrls.has(fullUrl)) {
+                seenUrls.add(fullUrl);
+              }
+            }
+          });
+          
+          console.log(`Found ${seenUrls.size} unique tournament URLs`);
+          
+          for (const url of Array.from(seenUrls)) {
+            try {
+              const tournament = await this.scrapeTournamentPage(url);
+              if (tournament) {
+                tournaments.push(tournament);
+              }
+            } catch (error) {
+              console.error(`Error scraping tournament ${url}:`, error);
             }
           }
-        });
+        }
         
-        for (const url of Array.from(seenUrls)) {
-          try {
-            const tournament = await this.scrapeTournamentPage(url);
+        const jsonData = this.extractJsonData($);
+        console.log('JSON data found:', Object.keys(jsonData));
+        if (jsonData.tournaments && Array.isArray(jsonData.tournaments)) {
+          console.log(`Found ${jsonData.tournaments.length} tournaments in JSON`);
+          for (const t of jsonData.tournaments) {
+            const tournament = this.parseJsonTournament(t);
             if (tournament) {
               tournaments.push(tournament);
             }
-          } catch (error) {
-            console.error(`Error scraping tournament ${url}:`, error);
-          }
-        }
-      }
-      
-      const jsonData = this.extractJsonData($);
-      if (jsonData.tournaments && Array.isArray(jsonData.tournaments)) {
-        for (const t of jsonData.tournaments) {
-          const tournament = this.parseJsonTournament(t);
-          if (tournament) {
-            tournaments.push(tournament);
           }
         }
       }
@@ -56,7 +69,6 @@ export class PickleballTournamentsScraper extends BaseScraper {
   }
 
   private async fetchHtmlWithRetry(url: string, maxRetries: number = 3): Promise<cheerio.Root> {
-    const { default: cheerio } = await import('cheerio');
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -65,7 +77,13 @@ export class PickleballTournamentsScraper extends BaseScraper {
         try {
           const page = await browser.newPage();
           await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-          await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
+          await page.goto(url, { waitUntil: 'load', timeout: 120000 });
+          
+          try {
+            await page.waitForSelector('[class*="tournament"], a[href*="/tournaments/"], [data-testid*="tournament"]', { timeout: 30000 });
+          } catch {
+            console.log('Tournament elements not found, continuing with whatever loaded');
+          }
           
           const html = await page.content();
           return cheerio.load(html);
@@ -75,7 +93,7 @@ export class PickleballTournamentsScraper extends BaseScraper {
       } catch (error) {
         lastError = error as Error;
         if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+          await new Promise(resolve => setTimeout(resolve, 3000 * attempt));
         }
       }
     }
