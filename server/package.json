@@ -9,7 +9,10 @@
     "start": "node dist/index.js",
     "start:server": "npm run build && npm run start",
     "lint": "eslint src/",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "scrape": "curl -s -X POST http://localhost:3001/api/scrape/trigger",
+    "scrape:maincourt": "curl -s -X POST http://localhost:3001/api/scrape/trigger -H \"Content-Type: application/json\" -d '{\"source\": \"maincourt.com\"}'",
+    "scrape:pickleballtournaments": "curl -s -X POST http://localhost:3001/api/scrape/trigger -H \"Content-Type: application/json\" -d '{\"source\": \"pickleballtournaments.com\"}'"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",

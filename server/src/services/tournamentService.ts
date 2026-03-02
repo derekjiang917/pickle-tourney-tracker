@@ -22,19 +22,6 @@ export interface GetTournamentsResult {
   total: number;
 }
 
-function parseSkillLevels(skillLevelsStr: string): string[] {
-  try {
-    return JSON.parse(skillLevelsStr);
-  } catch {
-    return [];
-  }
-}
-
-function matchesSkillLevels(tournamentSkillLevels: string, filterSkillLevels: string[]): boolean {
-  const levels = parseSkillLevels(tournamentSkillLevels);
-  return filterSkillLevels.some((level) => levels.includes(level));
-}
-
 export async function getTournaments({
   skip,
   take,
@@ -61,19 +48,26 @@ export async function getTournaments({
     }
   }
 
-  let allTournaments = await prisma.tournament.findMany({
-    where,
-    orderBy: { startDate: 'asc' },
-  });
-
   if (filters.skillLevels && filters.skillLevels.length > 0) {
-    allTournaments = allTournaments.filter((t) =>
-      matchesSkillLevels(t.skillLevels as string, filters.skillLevels!)
-    );
+    where.skillLevels = {
+      some: {
+        skillLevel: { in: filters.skillLevels },
+      },
+    };
   }
 
-  const total = allTournaments.length;
-  const tournaments = allTournaments.slice(skip, skip + take);
+  const [tournaments, total] = await Promise.all([
+    prisma.tournament.findMany({
+      where,
+      orderBy: { startDate: 'asc' },
+      skip,
+      take,
+      include: {
+        skillLevels: true,
+      },
+    }),
+    prisma.tournament.count({ where }),
+  ]);
 
   return { tournaments, total };
 }
@@ -81,6 +75,9 @@ export async function getTournaments({
 export async function getTournamentById(id: string): Promise<Tournament | null> {
   return prisma.tournament.findUnique({
     where: { id },
+    include: {
+      skillLevels: true,
+    },
   });
 }
 
@@ -116,6 +113,10 @@ export async function upsertTournaments(tournaments: ScrapedTournamentInput[]): 
           where: { sourceUrl: tournament.sourceUrl },
         });
 
+        const skillLevelsData = tournament.skillLevels.map((level) => ({
+          skillLevel: level,
+        }));
+
         if (existing) {
           await tx.tournament.update({
             where: { id: existing.id },
@@ -126,8 +127,11 @@ export async function upsertTournaments(tournaments: ScrapedTournamentInput[]): 
               state: tournament.state,
               startDate: tournament.startDate,
               endDate: tournament.endDate,
-              skillLevels: JSON.stringify(tournament.skillLevels),
               description: tournament.description,
+              skillLevels: {
+                deleteMany: {},
+                create: skillLevelsData,
+              },
             },
           });
           result.updated++;
@@ -142,8 +146,10 @@ export async function upsertTournaments(tournaments: ScrapedTournamentInput[]): 
               state: tournament.state,
               startDate: tournament.startDate,
               endDate: tournament.endDate,
-              skillLevels: JSON.stringify(tournament.skillLevels),
               description: tournament.description,
+              skillLevels: {
+                create: skillLevelsData,
+              },
             },
           });
           result.created++;

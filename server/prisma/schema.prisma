@@ -9,22 +9,31 @@ datasource db {
 model Tournament {
   id          String   @id @default(uuid())
   name        String
-  sourceUrl   String
+  sourceUrl   String   @unique
   source      String
   location    String
   city        String
   state       String
   startDate   DateTime
   endDate     DateTime
-  skillLevels String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([sourceUrl])
+  skillLevels TournamentSkillLevel[]
+
   @@index([city, state, startDate])
   @@index([startDate])
-  @@index([skillLevels])
+}
+
+model TournamentSkillLevel {
+  id           String     @id @default(uuid())
+  skillLevel   String
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, skillLevel])
+  @@index([skillLevel])
 }
 
 model ScrapeLog {

@@ -59,10 +59,17 @@ export class MaincourtScraper extends BaseScraper {
         try {
           const page = await browser.newPage();
           await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-          await page.goto(url, { waitUntil: 'load', timeout: 120000 });
+          
+          page.on('console', msg => {
+            if (msg.type() === 'error' && msg.text().includes('JSON.parse')) {
+              return;
+            }
+          });
+          
+          await page.goto(url, { waitUntil: 'load', timeout: 60000 });
           
           try {
-            await page.waitForSelector('.tournamentslisting__card, [class*="tournament"]', { timeout: 30000 });
+            await page.waitForSelector('.tournamentslisting__card, [class*="tournament"]', { timeout: 15000 });
           } catch {
             console.log('Tournament elements not found, continuing with whatever loaded');
           }
@@ -189,6 +196,27 @@ export class MaincourtScraper extends BaseScraper {
       const endStr = `${monthRangeMatch[4]} ${monthRangeMatch[5]}, ${monthRangeMatch[6]}`;
       result.startDate = parseDate(startStr);
       result.endDate = parseDate(endStr);
+      return result;
+    }
+
+    const dayOfWeekMonthRangePattern = /(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat),?\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+(\d{1,2}),?\s*(\d{4})\s*[-–]\s*(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat),?\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+(\d{1,2}),?\s*(\d{4})/i;
+    const dayOfWeekMonthRangeMatch = text.match(dayOfWeekMonthRangePattern);
+    
+    if (dayOfWeekMonthRangeMatch) {
+      const startStr = `${dayOfWeekMonthRangeMatch[1]} ${dayOfWeekMonthRangeMatch[2]}, ${dayOfWeekMonthRangeMatch[3]}`;
+      const endStr = `${dayOfWeekMonthRangeMatch[4]} ${dayOfWeekMonthRangeMatch[5]}, ${dayOfWeekMonthRangeMatch[6]}`;
+      result.startDate = parseDate(startStr);
+      result.endDate = parseDate(endStr);
+      return result;
+    }
+
+    const dayOfWeekMonthSinglePattern = /(?:Sun|Mon|Tue|Wed|Thu|Fri|Sat),?\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+(\d{1,2}),?\s*(\d{4})/i;
+    const dayOfWeekMonthSingleMatch = text.match(dayOfWeekMonthSinglePattern);
+    
+    if (dayOfWeekMonthSingleMatch) {
+      const startStr = `${dayOfWeekMonthSingleMatch[1]} ${dayOfWeekMonthSingleMatch[2]}, ${dayOfWeekMonthSingleMatch[3]}`;
+      result.startDate = parseDate(startStr);
+      result.endDate = result.startDate;
     }
 
     return result;

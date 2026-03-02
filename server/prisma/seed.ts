@@ -1,8 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
-import Database from 'better-sqlite3';
 
-const sqlite = new Database('./prisma/dev.db');
 const adapter = new PrismaBetterSqlite3({ url: './prisma/dev.db' });
 const prisma = new PrismaClient({ adapter });
 
@@ -16,7 +14,7 @@ const tournaments = [
     state: 'AZ',
     startDate: new Date('2026-03-15'),
     endDate: new Date('2026-03-17'),
-    skillLevels: JSON.stringify(['3.0', '3.5', '4.0', '4.5']),
+    skillLevels: ['3.0', '3.5', '4.0', '4.5'],
     description: 'Annual summer tournament featuring multiple skill divisions. Food vendors and prizes included.',
   },
   {
@@ -28,7 +26,7 @@ const tournaments = [
     state: 'CO',
     startDate: new Date('2026-04-01'),
     endDate: new Date('2026-04-02'),
-    skillLevels: JSON.stringify(['2.5', '3.0', '3.5']),
+    skillLevels: ['2.5', '3.0', '3.5'],
     description: 'Indoor winter championship. All skill levels welcome.',
   },
   {
@@ -40,7 +38,7 @@ const tournaments = [
     state: 'TX',
     startDate: new Date('2026-05-24'),
     endDate: new Date('2026-05-26'),
-    skillLevels: JSON.stringify(['All Levels']),
+    skillLevels: ['All Levels'],
     description: 'Mixed doubles tournament open to all skill levels. Registration includes lunch.',
   },
   {
@@ -52,162 +50,125 @@ const tournaments = [
     state: 'WA',
     startDate: new Date('2026-06-10'),
     endDate: new Date('2026-06-12'),
-    skillLevels: JSON.stringify(['3.0', '3.5', '4.0', '4.5', '5.0']),
-    description: 'Premier Pacific Northwest tournament with cash prizes.',
-  },
-  {
-    name: 'Florida State Championships',
-    sourceUrl: 'https://example.com/tournament5',
-    source: 'Florida Pickleball',
-    location: 'Bradenton Sports Complex',
-    city: 'Bradenton',
-    state: 'FL',
-    startDate: new Date('2026-07-20'),
-    endDate: new Date('2026-07-25'),
-    skillLevels: JSON.stringify(['2.5', '3.0', '3.5', '4.0', '4.5', '5.0']),
-    description: 'State championships with over 200 teams expected.',
-  },
-  {
-    name: 'Labor Day Weekend Tournament',
-    sourceUrl: 'https://example.com/tournament6',
-    source: 'PickleballTournaments.com',
-    location: 'Central Park Courts',
-    city: 'San Diego',
-    state: 'CA',
-    startDate: new Date('2026-09-05'),
-    endDate: new Date('2026-09-07'),
-    skillLevels: JSON.stringify(['3.0', '3.5', '4.0']),
-    description: 'Annual Labor Day tournament with beach activities.',
-  },
-  {
-    name: 'Spring Fling Tournament',
-    sourceUrl: 'https://example.com/tournament7',
-    source: 'USAPA',
-    location: 'Nashville Sports Complex',
-    city: 'Nashville',
-    state: 'TN',
-    startDate: new Date('2026-04-20'),
-    endDate: new Date('2026-04-22'),
-    skillLevels: JSON.stringify(['2.5', '3.0', '3.5', '4.0']),
-    description: 'Music City spring tournament with live entertainment between matches.',
-  },
-  {
-    name: 'New England Fall Classic',
-    sourceUrl: 'https://example.com/tournament8',
-    source: 'New England Pickleball',
-    location: 'Boston Athletic Club',
-    city: 'Boston',
-    state: 'MA',
-    startDate: new Date('2026-10-15'),
-    endDate: new Date('2026-10-17'),
-    skillLevels: JSON.stringify(['3.5', '4.0', '4.5', '5.0']),
-    description: 'Fall classic in historic Boston with championship finals on Sunday.',
-  },
-  {
-    name: 'Texas Heat Summer Slam',
-    sourceUrl: 'https://example.com/tournament9',
-    source: 'Texas Pickleball Association',
-    location: 'Houston Sports Arena',
-    city: 'Houston',
-    state: 'TX',
-    startDate: new Date('2026-08-10'),
-    endDate: new Date('2026-08-12'),
-    skillLevels: JSON.stringify(['2.5', '3.0', '3.5', '4.0', '4.5']),
-    description: 'Beat the heat with our annual summer slam. Indoor courts with AC.',
-  },
-  {
-    name: 'Midwest Madness',
-    sourceUrl: 'https://example.com/tournament10',
-    source: 'Midwest Pickleball League',
-    location: 'Chicago Sports Center',
-    city: 'Chicago',
-    state: 'IL',
-    startDate: new Date('2026-05-30'),
-    endDate: new Date('2026-06-01'),
-    skillLevels: JSON.stringify(['3.0', '3.5', '4.0']),
-    description: 'Windy City tournament featuring the best players from the Midwest.',
-  },
-  {
-    name: 'Mountain View Open',
-    sourceUrl: 'https://example.com/tournament11',
-    source: 'USAPA',
-    location: 'Denver Pickleball Complex',
-    city: 'Denver',
-    state: 'CO',
-    startDate: new Date('2026-07-15'),
-    endDate: new Date('2026-07-17'),
-    skillLevels: JSON.stringify(['2.5', '3.0', '3.5', '4.0', '4.5', '5.0']),
-    description: 'Tournament with a view! Play at 5000 feet elevation.',
+    skillLevels: ['3.0', '3.5', '4.0', '4.5', '5.0'],
+    description: 'Pacific Northwest largest open tournament.',
   },
   {
     name: 'East Coast Classic',
-    sourceUrl: 'https://example.com/tournament12',
-    source: 'East Coast Pickleball',
-    location: 'Virginia Beach Convention Center',
+    sourceUrl: 'https://example.com/tournament5',
+    source: 'PickleballTournaments.com',
+    location: 'Virginia Beach Courts',
     city: 'Virginia Beach',
     state: 'VA',
-    startDate: new Date('2026-09-25'),
-    endDate: new Date('2026-09-27'),
-    skillLevels: JSON.stringify(['3.0', '3.5', '4.0', '4.5']),
-    description: 'Beachside tournament combining competitive play with relaxation.',
+    startDate: new Date('2026-07-15'),
+    endDate: new Date('2026-07-17'),
+    skillLevels: ['2.5', '3.0', '3.5', '4.0', '4.5', '5.0'],
+    description: 'Annual east coast classic with prize money.',
   },
   {
-    name: 'Cactus Country Championship',
-    sourceUrl: 'https://example.com/tournament13',
-    source: 'Arizona Pickleball Association',
-    location: 'Tucson Desert Courts',
-    city: 'Tucson',
-    state: 'AZ',
-    startDate: new Date('2026-11-10'),
-    endDate: new Date('2026-11-12'),
-    skillLevels: JSON.stringify(['2.5', '3.0', '3.5', '4.0']),
-    description: 'Desert championship with perfect weather and stunning sunsets.',
+    name: 'Midwest Madness',
+    sourceUrl: 'https://example.com/tournament6',
+    source: 'USAPA',
+    location: 'Chicago Sports Complex',
+    city: 'Chicago',
+    state: 'IL',
+    startDate: new Date('2026-08-01'),
+    endDate: new Date('2026-08-02'),
+    skillLevels: ['3.0', '3.5', '4.0'],
+    description: 'Midwest largest tournament.',
   },
   {
-    name: 'Northern Lights Invitational',
-    sourceUrl: 'https://example.com/tournament14',
-    source: 'Canadian Pickleball Association',
-    location: 'Vancouver Indoor Facility',
-    city: 'Vancouver',
-    state: 'BC',
-    startDate: new Date('2026-02-20'),
-    endDate: new Date('2026-02-22'),
-    skillLevels: JSON.stringify(['3.5', '4.0', '4.5', '5.0']),
-    description: 'Prestigious invitational tournament with top Canadian and US players.',
+    name: 'Southern Swing Tournament',
+    sourceUrl: 'https://example.com/tournament7',
+    source: 'PickleballTournaments.com',
+    location: 'Nashville Sports Arena',
+    city: 'Nashville',
+    state: 'TN',
+    startDate: new Date('2026-09-20'),
+    endDate: new Date('2026-09-22'),
+    skillLevels: ['2.5', '3.0', '3.5', '4.0'],
+    description: 'Country music and pickleball!',
   },
   {
-    name: 'Georgia Peach Open',
-    sourceUrl: 'https://example.com/tournament15',
-    source: 'Georgia Pickleball Federation',
-    location: 'Atlanta Tennis Center',
-    city: 'Atlanta',
-    state: 'GA',
-    startDate: new Date('2026-03-28'),
-    endDate: new Date('2026-03-30'),
-    skillLevels: JSON.stringify(['2.5', '3.0', '3.5', '4.0', '4.5']),
-    description: 'Peach State championship with Southern hospitality and great prizes.',
+    name: 'Florida State Championships',
+    sourceUrl: 'https://example.com/tournament8',
+    source: 'USAPA',
+    location: 'Orlando Tennis Center',
+    city: 'Orlando',
+    state: 'FL',
+    startDate: new Date('2026-10-10'),
+    endDate: new Date('2026-10-12'),
+    skillLevels: ['3.5', '4.0', '4.5', '5.0'],
+    description: 'Florida state championships with professional divisions.',
+  },
+  {
+    name: 'Thanksgiving Turkey Trot',
+    sourceUrl: 'https://example.com/tournament9',
+    source: 'PickleballTournaments.com',
+    location: 'Portland Community Center',
+    city: 'Portland',
+    state: 'OR',
+    startDate: new Date('2026-11-28'),
+    endDate: new Date('2026-11-29'),
+    skillLevels: ['2.5', '3.0', '3.5', '4.0', '4.5'],
+    description: 'Annual thanksgiving tournament.',
+  },
+  {
+    name: 'Holiday Classic',
+    sourceUrl: 'https://example.com/tournament10',
+    source: 'USAPA',
+    location: 'San Diego Sports Hall',
+    city: 'San Diego',
+    state: 'CA',
+    startDate: new Date('2026-12-15'),
+    endDate: new Date('2026-12-17'),
+    skillLevels: ['3.0', '3.5', '4.0', '4.5'],
+    description: 'Holiday tournament to end the year.',
   },
 ];
 
 async function main() {
-  console.log('Starting database seed...');
+  console.log('Seeding database...');
 
-  await prisma.tournament.deleteMany();
-  console.log('Cleared existing tournaments');
-
-  for (const tournament of tournaments) {
-    await prisma.tournament.create({
-      data: tournament,
+  for (const t of tournaments) {
+    await prisma.tournament.upsert({
+      where: { sourceUrl: t.sourceUrl },
+      update: {
+        name: t.name,
+        location: t.location,
+        city: t.city,
+        state: t.state,
+        startDate: t.startDate,
+        endDate: t.endDate,
+        description: t.description,
+        skillLevels: {
+          deleteMany: {},
+          create: t.skillLevels.map((level) => ({ skillLevel: level })),
+        },
+      },
+      create: {
+        name: t.name,
+        sourceUrl: t.sourceUrl,
+        source: t.source,
+        location: t.location,
+        city: t.city,
+        state: t.state,
+        startDate: t.startDate,
+        endDate: t.endDate,
+        description: t.description,
+        skillLevels: {
+          create: t.skillLevels.map((level) => ({ skillLevel: level })),
+        },
+      },
     });
-    console.log(`Created tournament: ${tournament.name}`);
   }
 
-  console.log(`Seeded ${tournaments.length} tournaments successfully`);
+  console.log('Seeding complete!');
 }
 
 main()
   .catch((e) => {
-    console.error('Error seeding database:', e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

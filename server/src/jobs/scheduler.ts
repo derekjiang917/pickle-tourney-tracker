@@ -19,7 +19,12 @@ export interface ScrapeJobResult {
 let scheduledTask: ScheduledTask | null = null;
 let isRunning = false;
 
-export async function runScrapeJob(): Promise<ScrapeJobResult> {
+export interface ScrapeJobOptions {
+  source?: string;
+}
+
+export async function runScrapeJob(options: ScrapeJobOptions = {}): Promise<ScrapeJobResult> {
+  const { source } = options;
   const startTime = Date.now();
   const result: ScrapeJobResult = {
     success: false,
@@ -39,14 +44,15 @@ export async function runScrapeJob(): Promise<ScrapeJobResult> {
 
   const scrapeLog = await prisma.scrapeLog.create({
     data: {
-      source: 'all',
+      source: source || 'all',
       startTime: new Date(),
       status: 'running',
     },
   });
 
   try {
-    const sources = registry.getSourceNames();
+    const sources = source ? [source] : registry.getSourceNames();
+    console.log(`Scraping sources: ${sources.join(', ')}`);
 
     for (const source of sources) {
       try {

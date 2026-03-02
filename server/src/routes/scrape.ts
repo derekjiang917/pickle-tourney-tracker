@@ -19,13 +19,23 @@ router.post('/trigger', async (req: Request, res: Response, next: NextFunction) 
       });
     }
 
-    const result = await runScrapeJob();
+    const source = req.body.source as string | undefined;
+    const availableSources = ['pickleballtournaments.com', 'maincourt.com'];
+    
+    if (source && !availableSources.includes(source)) {
+      return res.status(400).json({
+        error: `Invalid source. Available sources: ${availableSources.join(', ')}`,
+      });
+    }
+
+    const result = await runScrapeJob({ source });
     clearCache('/api/tournaments');
 
     res.json({
       success: result.success,
       message: result.success ? 'Scrape completed successfully' : 'Scrape completed with errors',
       data: {
+        source: source || 'all',
         tournamentsFound: result.tournamentsFound,
         tournamentsCreated: result.tournamentsCreated,
         tournamentsUpdated: result.tournamentsUpdated,
