@@ -86,6 +86,7 @@ export async function upsertTournaments(tournaments) {
                             startDate: tournament.startDate,
                             endDate: tournament.endDate,
                             description: tournament.description,
+                            imageUrl: tournament.imageUrl,
                             skillLevels: {
                                 deleteMany: {},
                                 create: skillLevelsData,
@@ -106,6 +107,7 @@ export async function upsertTournaments(tournaments) {
                             startDate: tournament.startDate,
                             endDate: tournament.endDate,
                             description: tournament.description,
+                            imageUrl: tournament.imageUrl,
                             skillLevels: {
                                 create: skillLevelsData,
                             },

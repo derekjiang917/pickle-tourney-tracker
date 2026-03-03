@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Tournament } from '@/types/tournament';
 import { fetchTournaments, TournamentFilters } from '@/lib/api';
 import { TournamentCard, TournamentCardSkeleton } from './TournamentCard';
+import { TournamentModal } from './TournamentModal';
 import { Pagination } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
 import { SearchX } from 'lucide-react';
@@ -35,6 +36,8 @@ export function TournamentList({
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const loadTournaments = async () => {
@@ -113,7 +116,14 @@ export function TournamentList({
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {tournaments.map((tournament) => (
-          <TournamentCard key={tournament.id} tournament={tournament} />
+          <TournamentCard 
+            key={tournament.id} 
+            tournament={tournament} 
+            onSelect={(t) => {
+              setSelectedTournament(t);
+              setModalOpen(true);
+            }}
+          />
         ))}
       </div>
       
@@ -122,6 +132,12 @@ export function TournamentList({
         totalPages={totalPages}
         total={total}
         onPageChange={onPageChange}
+      />
+
+      <TournamentModal
+        tournament={selectedTournament}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
       />
     </div>
   );

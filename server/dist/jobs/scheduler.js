@@ -53,6 +53,7 @@ export async function runScrapeJob(options = {}) {
                     endDate: t.endDate,
                     skillLevels: t.skillLevels,
                     description: t.description,
+                    imageUrl: t.imageUrl,
                     registrationUrl: t.registrationUrl,
                 }));
                 const upsertResult = await upsertTournaments(input);

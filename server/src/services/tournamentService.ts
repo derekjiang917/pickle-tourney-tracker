@@ -102,6 +102,7 @@ export interface ScrapedTournamentInput {
   endDate: Date;
   skillLevels: string[];
   description?: string;
+  imageUrl?: string;
   registrationUrl?: string;
 }
 
@@ -138,6 +139,7 @@ export async function upsertTournaments(tournaments: ScrapedTournamentInput[]): 
               startDate: tournament.startDate,
               endDate: tournament.endDate,
               description: tournament.description,
+              imageUrl: tournament.imageUrl,
               skillLevels: {
                 deleteMany: {},
                 create: skillLevelsData,
@@ -157,6 +159,7 @@ export async function upsertTournaments(tournaments: ScrapedTournamentInput[]): 
               startDate: tournament.startDate,
               endDate: tournament.endDate,
               description: tournament.description,
+              imageUrl: tournament.imageUrl,
               skillLevels: {
                 create: skillLevelsData,
               },

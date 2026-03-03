@@ -193,7 +193,9 @@ export async function scrapeMaincourtTournament(url: string): Promise<ScrapedTou
       skillLevels.push(...extractedSkills);
     }
 
-    const description = sanitizeString($('.division__notes__inner').first().text());
+    const description = sanitizeString($('.division__notes__inner').first().text(), true);
+
+    const imageUrl = $('#listing-hub-image').attr('src');
 
     return createTournament(SOURCE_NAME, {
       name,
@@ -205,6 +207,7 @@ export async function scrapeMaincourtTournament(url: string): Promise<ScrapedTou
       endDate,
       skillLevels: [...new Set(skillLevels)],
       description,
+      imageUrl: imageUrl || undefined,
       registrationUrl,
     });
   } catch (error) {

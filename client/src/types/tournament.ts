@@ -10,6 +10,7 @@ export interface Tournament {
   endDate: string;
   skillLevels: string[];
   description: string;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

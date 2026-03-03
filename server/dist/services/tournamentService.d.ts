@@ -31,6 +31,7 @@ export interface ScrapedTournamentInput {
     endDate: Date;
     skillLevels: string[];
     description?: string;
+    imageUrl?: string;
     registrationUrl?: string;
 }
 export declare function upsertTournaments(tournaments: ScrapedTournamentInput[]): Promise<{

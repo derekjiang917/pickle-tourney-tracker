@@ -76,6 +76,7 @@ export async function runScrapeJob(options: ScrapeJobOptions = {}): Promise<Scra
           endDate: t.endDate,
           skillLevels: t.skillLevels,
           description: t.description,
+          imageUrl: t.imageUrl,
           registrationUrl: t.registrationUrl,
         }));
 

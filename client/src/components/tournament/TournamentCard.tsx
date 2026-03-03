@@ -7,6 +7,7 @@ import { Calendar, MapPin } from 'lucide-react';
 
 interface TournamentCardProps {
   tournament: Tournament;
+  onSelect: (tournament: Tournament) => void;
 }
 
 interface TournamentCardSkeletonProps {
@@ -21,7 +22,7 @@ function getSkillLevelColor(level: string): string {
   return 'bg-red-600 hover:bg-red-700 border-red-600';
 }
 
-export function TournamentCard({ tournament }: TournamentCardProps) {
+export function TournamentCard({ tournament, onSelect }: TournamentCardProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
@@ -37,8 +38,19 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
     return `${formatDate(tournament.startDate)} - ${formatDate(tournament.endDate)}`;
   };
 
+  const handleCardClick = () => {
+    onSelect(tournament);
+  };
+
+  const handleSignUpClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <Card className="flex flex-col h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
+    <Card 
+      className="flex flex-col h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+      onClick={handleCardClick}
+    >
       <CardHeader>
         <CardTitle className="line-clamp-2 text-lg leading-tight">{tournament.name}</CardTitle>
       </CardHeader>
@@ -72,7 +84,7 @@ export function TournamentCard({ tournament }: TournamentCardProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button asChild className="w-full">
+        <Button asChild className="w-full" onClick={handleSignUpClick}>
           <a href={tournament.sourceUrl} target="_blank" rel="noopener noreferrer">
             Sign Up
           </a>

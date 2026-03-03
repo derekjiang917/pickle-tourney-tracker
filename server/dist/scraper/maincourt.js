@@ -63,12 +63,10 @@ export async function fetchMaincourtListPage(url) {
                 });
                 await page.goto(url, { waitUntil: 'load', timeout: 60000 });
                 try {
-                    await page.waitForSelector('.tournamentslisting__card, [class*="tournament"]', {
-                        timeout: 15000,
-                    });
+                    await page.waitForFunction('parseInt(document.querySelector("#tournamentsCount")?.textContent || "0", 10) > 0 && document.querySelector(".tournamentslisting__card, [class*=\'tournament\']") !== null', { timeout: 25000 });
                 }
                 catch {
-                    console.log('Tournament elements not found, continuing with whatever loaded');
+                    console.log('Tournaments may not have loaded, proceeding with current content');
                 }
                 const html = await page.content();
                 return cheerio.load(html);
@@ -101,11 +99,21 @@ export async function scrapeMaincourtTournament(url) {
             return $(el).find('.icon-new-map-pin').length > 0;
         });
         if (locationItem.length > 0) {
-            const venueLink = locationItem.find('.division__card__list__item__link');
-            location =
-                venueLink.length > 0
-                    ? sanitizeString(venueLink.text())
-                    : sanitizeString(locationItem.text());
+            const mapLink = locationItem.find('a[href*="maps.google.com"]');
+            if (mapLink.length > 0) {
+                const href = mapLink.attr('href') || '';
+                const match = href.match(/q=(.+)$/);
+                if (match) {
+                    location = decodeURIComponent(match[1].trim());
+                }
+            }
+            if (!location) {
+                const venueLink = locationItem.find('.division__card__list__item__link');
+                location =
+                    venueLink.length > 0
+                        ? sanitizeString(venueLink.text())
+                        : sanitizeString(locationItem.text());
+            }
             const { city: c, state: s } = extractCityState(location);
             city = c;
             state = s;
@@ -144,7 +152,8 @@ export async function scrapeMaincourtTournament(url) {
             const extractedSkills = parseSkillLevels(skillText);
             skillLevels.push(...extractedSkills);
         }
-        const description = sanitizeString($('.division__notes__inner').first().text());
+        const description = sanitizeString($('.division__notes__inner').first().text(), true);
+        const imageUrl = $('#listing-hub-image').attr('src');
         return createTournament(SOURCE_NAME, {
             name,
             sourceUrl: url,
@@ -155,6 +164,7 @@ export async function scrapeMaincourtTournament(url) {
             endDate,
             skillLevels: [...new Set(skillLevels)],
             description,
+            imageUrl: imageUrl || undefined,
             registrationUrl,
         });
     }
