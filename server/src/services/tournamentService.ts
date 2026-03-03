@@ -39,12 +39,39 @@ export async function getTournaments({
   }
 
   if (filters.startDate || filters.endDate) {
-    where.startDate = {};
-    if (filters.startDate) {
-      where.startDate.gte = filters.startDate;
+    where.OR = [];
+    
+    const filterStart = filters.startDate ? new Date(filters.startDate) : null;
+    const filterEnd = filters.endDate ? new Date(filters.endDate) : null;
+    
+    if (filterStart && filterEnd) {
+      const filterStartDay = new Date(filterStart);
+      filterStartDay.setHours(0, 0, 0, 0);
+      const filterEndDay = new Date(filterEnd);
+      filterEndDay.setHours(23, 59, 59, 999);
+      
+      where.OR.push({
+        AND: [
+          { startDate: { gte: filterStartDay } },
+          { endDate: { lte: filterEndDay } },
+        ],
+      });
     }
-    if (filters.endDate) {
-      where.startDate.lte = filters.endDate;
+    
+    if (filterStart) {
+      const filterStartDay = new Date(filterStart);
+      filterStartDay.setHours(0, 0, 0, 0);
+      where.OR.push({
+        endDate: { gte: filterStartDay },
+      });
+    }
+    
+    if (filterEnd) {
+      const filterEndDay = new Date(filterEnd);
+      filterEndDay.setHours(23, 59, 59, 999);
+      where.OR.push({
+        startDate: { lte: filterEndDay },
+      });
     }
   }
 
