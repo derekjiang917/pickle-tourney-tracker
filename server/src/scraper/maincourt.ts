@@ -86,11 +86,12 @@ export async function fetchMaincourtListPage(url: string): Promise<cheerio.Root>
         await page.goto(url, { waitUntil: 'load', timeout: 60000 });
 
         try {
-          await page.waitForSelector('.tournamentslisting__card, [class*="tournament"]', {
-            timeout: 15000,
-          });
+          await page.waitForFunction(
+            'parseInt(document.querySelector("#tournamentsCount")?.textContent || "0", 10) > 0 && document.querySelector(".tournamentslisting__card, [class*=\'tournament\']") !== null',
+            { timeout: 25000 }
+          );
         } catch {
-          console.log('Tournament elements not found, continuing with whatever loaded');
+          console.log('Tournaments may not have loaded, proceeding with current content');
         }
 
         const html = await page.content();
