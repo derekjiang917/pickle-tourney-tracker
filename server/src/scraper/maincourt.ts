@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
-import { BaseScraper, ScrapedTournament, parseDate, parseSkillLevels, extractCityState, sanitizeString } from './base.js';
+import { BaseScraper, ScrapedTournament, parseDate, parseSkillLevels, extractCityState, sanitizeString, toPacificTime } from './base.js';
 
+// All maincourt.com tournaments are in California (Pacific Time)
 export class MaincourtScraper extends BaseScraper {
   readonly sourceName = 'maincourt.com';
   readonly baseUrl = 'https://maincourt.com';
@@ -128,8 +129,8 @@ export class MaincourtScraper extends BaseScraper {
         const dateText = dateItem.text().trim();
         const dates = this.extractDates(dateText);
         if (dates.startDate) {
-          startDate = dates.startDate;
-          endDate = dates.endDate || dates.startDate;
+          startDate = toPacificTime(dates.startDate);
+          endDate = toPacificTime(dates.endDate || dates.startDate);
         }
       }
 
@@ -143,9 +144,20 @@ export class MaincourtScraper extends BaseScraper {
       }
 
       const skillLevels: string[] = [];
-      const skillText = $('.divi__row__left__list .icon-ball').parent().text();
-      const extractedSkills = parseSkillLevels(skillText);
-      skillLevels.push(...extractedSkills);
+      
+      const divisionTitles = $('.divi__list');
+      divisionTitles.each((_, el) => {
+        const titleElement = $(el).find('.divi__list__title');
+        const titleText = titleElement.text().trim();
+        const extractedFromTitle = this.extractSkillLevelFromTitle(titleText);
+        skillLevels.push(...extractedFromTitle);
+      });
+
+      if (skillLevels.length === 0) {
+        const skillText = $('.divi__row__left__list .icon-ball').parent().text();
+        const extractedSkills = parseSkillLevels(skillText);
+        skillLevels.push(...extractedSkills);
+      }
 
       const description = sanitizeString($('.division__notes__inner').first().text());
 
@@ -220,6 +232,30 @@ export class MaincourtScraper extends BaseScraper {
     }
 
     return result;
+  }
+
+  private extractSkillLevelFromTitle(title: string): string[] {
+    const levels: string[] = [];
+    const allLevels = ['3.0', '3.5', '4.0', '4.5', '5.0', '5.0+'];
+    
+    const match = title.match(/^([\d.]+)\+?\s/);
+    if (match) {
+      const baseLevel = match[1];
+      
+      if (title.includes('+')) {
+        const baseIndex = allLevels.indexOf(baseLevel);
+        if (baseIndex !== -1) {
+          levels.push(...allLevels.slice(baseIndex));
+        } else {
+          levels.push(baseLevel);
+          levels.push('5.0+');
+        }
+      } else {
+        levels.push(baseLevel);
+      }
+    }
+    
+    return levels;
   }
 
   private extractJsonData($: cheerio.Root): { tournaments?: unknown[] } {

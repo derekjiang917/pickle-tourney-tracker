@@ -24,10 +24,19 @@ export interface Scraper {
 export const DEFAULT_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
+// Pacific Time (UTC-8 standard, UTC-7 during daylight saving time)
+const PACIFIC_TIMEZONE_OFFSET = -8;
+
 export function parseDate(dateStr: string): Date | null {
   const cleaned = dateStr.trim();
   const parsed = new Date(cleaned);
   return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function toPacificTime(date: Date): Date {
+  const pacificDate = new Date(date);
+  pacificDate.setHours(pacificDate.getHours() + PACIFIC_TIMEZONE_OFFSET);
+  return pacificDate;
 }
 
 export function parseSkillLevels(skillLevelsText: string): string[] {

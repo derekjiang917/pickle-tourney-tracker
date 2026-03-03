@@ -39,39 +39,22 @@ export async function getTournaments({
   }
 
   if (filters.startDate || filters.endDate) {
-    where.OR = [];
+    const startDateFilter = filters.startDate ? new Date(filters.startDate) : null;
+    const endDateFilter = filters.endDate ? new Date(filters.endDate) : null;
     
-    const filterStart = filters.startDate ? new Date(filters.startDate) : null;
-    const filterEnd = filters.endDate ? new Date(filters.endDate) : null;
+    where.startDate = {};
     
-    if (filterStart && filterEnd) {
-      const filterStartDay = new Date(filterStart);
-      filterStartDay.setHours(0, 0, 0, 0);
-      const filterEndDay = new Date(filterEnd);
-      filterEndDay.setHours(23, 59, 59, 999);
-      
-      where.OR.push({
-        AND: [
-          { startDate: { gte: filterStartDay } },
-          { endDate: { lte: filterEndDay } },
-        ],
-      });
-    }
-    
-    if (filterStart) {
-      const filterStartDay = new Date(filterStart);
-      filterStartDay.setHours(0, 0, 0, 0);
-      where.OR.push({
-        endDate: { gte: filterStartDay },
-      });
-    }
-    
-    if (filterEnd) {
-      const filterEndDay = new Date(filterEnd);
-      filterEndDay.setHours(23, 59, 59, 999);
-      where.OR.push({
-        startDate: { lte: filterEndDay },
-      });
+    if (startDateFilter && endDateFilter) {
+      const filterStart = new Date(Date.UTC(startDateFilter.getFullYear(), startDateFilter.getMonth(), startDateFilter.getDate(), 0, 0, 0, 0));
+      const filterEnd = new Date(Date.UTC(endDateFilter.getFullYear(), endDateFilter.getMonth(), endDateFilter.getDate(), 23, 59, 59, 999));
+      where.startDate.gte = filterStart;
+      where.startDate.lte = filterEnd;
+    } else if (startDateFilter) {
+      const filterStart = new Date(Date.UTC(startDateFilter.getFullYear(), startDateFilter.getMonth(), startDateFilter.getDate(), 0, 0, 0, 0));
+      where.startDate.gte = filterStart;
+    } else if (endDateFilter) {
+      const filterEnd = new Date(Date.UTC(endDateFilter.getFullYear(), endDateFilter.getMonth(), endDateFilter.getDate(), 23, 59, 59, 999));
+      where.startDate.lte = filterEnd;
     }
   }
 
