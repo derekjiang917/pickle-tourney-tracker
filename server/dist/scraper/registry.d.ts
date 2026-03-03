@@ -1,4 +1,4 @@
-import { Scraper } from './base.js';
+import { Scraper } from './types.js';
 interface ScraperRegistry {
     getScraper(name: string): Scraper | undefined;
     getAllScrapers(): Scraper[];

@@ -7,7 +7,10 @@ export interface ScrapeJobResult {
     errors: string[];
     duration: number;
 }
-export declare function runScrapeJob(): Promise<ScrapeJobResult>;
+export interface ScrapeJobOptions {
+    source?: string;
+}
+export declare function runScrapeJob(options?: ScrapeJobOptions): Promise<ScrapeJobResult>;
 export declare function startScheduler(): void;
 export declare function stopScheduler(): void;
 export declare function getLastScrapeStatus(): Promise<ScrapeLog | null>;

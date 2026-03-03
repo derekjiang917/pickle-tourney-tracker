@@ -1,5 +1,5 @@
-import { PickleballTournamentsScraper } from './pickleballtournaments.js';
-import { MaincourtScraper } from './maincourt.js';
+import { pickleballTournamentsScraper } from './pickleballtournaments.js';
+import { maincourtScraper } from './maincourt.js';
 class ScraperRegistryImpl {
     scrapers = new Map();
     constructor() {
@@ -7,8 +7,8 @@ class ScraperRegistryImpl {
     }
     registerDefaultScrapers() {
         const scrapers = [
-            new PickleballTournamentsScraper(),
-            new MaincourtScraper(),
+            pickleballTournamentsScraper,
+            maincourtScraper,
         ];
         for (const scraper of scrapers) {
             this.scrapers.set(scraper.sourceName, scraper);

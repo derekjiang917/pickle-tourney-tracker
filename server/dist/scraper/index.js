@@ -1,84 +1,6 @@
-import puppeteer from 'puppeteer';
-import * as cheerio from 'cheerio';
-const DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-async function launchBrowser() {
-    return puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
-}
-async function createPage(browser, url) {
-    const page = await browser.newPage();
-    await page.setUserAgent(DEFAULT_USER_AGENT);
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    return page;
-}
-function parseDate(dateStr) {
-    const cleaned = dateStr.trim();
-    const parsed = new Date(cleaned);
-    return isNaN(parsed.getTime()) ? null : parsed;
-}
-function parseSkillLevels(skillLevelsText) {
-    const levels = [];
-    const patterns = [
-        /\b(1\.0|2\.0|3\.0|3\.5|4\.0|4\.5|5\.0|5\.5|6\.0)\b/gi,
-        /\b(Beginner|Intermediate|Advanced|Expert|Open|Pro)\b/gi,
-    ];
-    for (const pattern of patterns) {
-        const matches = skillLevelsText.match(pattern);
-        if (matches) {
-            levels.push(...matches.map((m) => m.toUpperCase()));
-        }
-    }
-    return [...new Set(levels)];
-}
-function extractCityState(locationStr) {
-    const parts = locationStr.split(',').map((p) => p.trim());
-    if (parts.length >= 2) {
-        const state = parts[parts.length - 1].trim();
-        const city = parts[parts.length - 2].trim();
-        return { city, state };
-    }
-    return { city: '', state: '' };
-}
-async function fetchPageContent(url) {
-    const browser = await launchBrowser();
-    try {
-        const page = await createPage(browser, url);
-        const content = await page.content();
-        return content;
-    }
-    finally {
-        await browser.close();
-    }
-}
-async function fetchPageWithPuppeteer(url, selector) {
-    const browser = await launchBrowser();
-    try {
-        const page = await createPage(browser, url);
-        await page.waitForSelector(selector, { timeout: 10000 });
-        const html = await page.content();
-        return cheerio.load(html);
-    }
-    finally {
-        await browser.close();
-    }
-}
-async function scrapeWithRetry(url, maxRetries = 3, delayMs = 1000) {
-    let lastError = null;
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            return await fetchPageContent(url);
-        }
-        catch (error) {
-            lastError = error;
-            if (attempt < maxRetries) {
-                await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
-            }
-        }
-    }
-    throw lastError || new Error('Failed to fetch page after retries');
-}
+import { launchBrowser, createPage, fetchHtml, fetchPageContent, scrapeWithRetry, } from './puppeteer.js';
+import { parseDate, parseSkillLevels, extractCityState, sanitizeString, extractDomain, toPacificTime, DEFAULT_USER_AGENT, createTournament, } from './utils.js';
+import { registry } from './registry.js';
 class ScraperOrchestrator {
     scrapers = new Map();
     register(scraper) {
@@ -135,5 +57,5 @@ class ScraperOrchestrator {
     }
 }
 const orchestrator = new ScraperOrchestrator();
-export { launchBrowser, createPage, parseDate, parseSkillLevels, extractCityState, fetchPageContent, fetchPageWithPuppeteer, scrapeWithRetry, orchestrator, ScraperOrchestrator, DEFAULT_USER_AGENT, };
+export { launchBrowser, createPage, fetchHtml, fetchPageContent, scrapeWithRetry, parseDate, parseSkillLevels, extractCityState, sanitizeString, extractDomain, toPacificTime, createTournament, orchestrator, ScraperOrchestrator, DEFAULT_USER_AGENT, registry, };
 //# sourceMappingURL=index.js.map

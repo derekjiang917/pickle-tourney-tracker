@@ -7,7 +7,8 @@ const adapter = new PrismaBetterSqlite3({ url: './prisma/dev.db' });
 const prisma = new PrismaClient({ adapter });
 let scheduledTask = null;
 let isRunning = false;
-export async function runScrapeJob() {
+export async function runScrapeJob(options = {}) {
+    const { source } = options;
     const startTime = Date.now();
     const result = {
         success: false,
@@ -24,13 +25,14 @@ export async function runScrapeJob() {
     isRunning = true;
     const scrapeLog = await prisma.scrapeLog.create({
         data: {
-            source: 'all',
+            source: source || 'all',
             startTime: new Date(),
             status: 'running',
         },
     });
     try {
-        const sources = registry.getSourceNames();
+        const sources = source ? [source] : registry.getSourceNames();
+        console.log(`Scraping sources: ${sources.join(', ')}`);
         for (const source of sources) {
             try {
                 const scraper = registry.getScraper(source);

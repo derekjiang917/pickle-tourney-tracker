@@ -1,6 +1,6 @@
-import { Scraper } from './base.js';
-import { PickleballTournamentsScraper } from './pickleballtournaments.js';
-import { MaincourtScraper } from './maincourt.js';
+import { Scraper } from './types.js';
+import { pickleballTournamentsScraper } from './pickleballtournaments.js';
+import { maincourtScraper } from './maincourt.js';
 
 interface ScraperRegistry {
   getScraper(name: string): Scraper | undefined;
@@ -17,8 +17,8 @@ class ScraperRegistryImpl implements ScraperRegistry {
 
   private registerDefaultScrapers(): void {
     const scrapers: Scraper[] = [
-      new PickleballTournamentsScraper(),
-      new MaincourtScraper(),
+      pickleballTournamentsScraper,
+      maincourtScraper,
     ];
 
     for (const scraper of scrapers) {

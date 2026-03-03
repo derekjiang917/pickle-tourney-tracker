@@ -2,18 +2,6 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 const adapter = new PrismaBetterSqlite3({ url: './prisma/dev.db' });
 const prisma = new PrismaClient({ adapter });
-function parseSkillLevels(skillLevelsStr) {
-    try {
-        return JSON.parse(skillLevelsStr);
-    }
-    catch {
-        return [];
-    }
-}
-function matchesSkillLevels(tournamentSkillLevels, filterSkillLevels) {
-    const levels = parseSkillLevels(tournamentSkillLevels);
-    return filterSkillLevels.some((level) => levels.includes(level));
-}
 export async function getTournaments({ skip, take, filters, }) {
     const where = {};
     if (filters.location) {
@@ -25,28 +13,51 @@ export async function getTournaments({ skip, take, filters, }) {
         ];
     }
     if (filters.startDate || filters.endDate) {
+        const startDateFilter = filters.startDate ? new Date(filters.startDate) : null;
+        const endDateFilter = filters.endDate ? new Date(filters.endDate) : null;
         where.startDate = {};
-        if (filters.startDate) {
-            where.startDate.gte = filters.startDate;
+        if (startDateFilter && endDateFilter) {
+            const filterStart = new Date(Date.UTC(startDateFilter.getFullYear(), startDateFilter.getMonth(), startDateFilter.getDate(), 0, 0, 0, 0));
+            const filterEnd = new Date(Date.UTC(endDateFilter.getFullYear(), endDateFilter.getMonth(), endDateFilter.getDate(), 23, 59, 59, 999));
+            where.startDate.gte = filterStart;
+            where.startDate.lte = filterEnd;
         }
-        if (filters.endDate) {
-            where.startDate.lte = filters.endDate;
+        else if (startDateFilter) {
+            const filterStart = new Date(Date.UTC(startDateFilter.getFullYear(), startDateFilter.getMonth(), startDateFilter.getDate(), 0, 0, 0, 0));
+            where.startDate.gte = filterStart;
+        }
+        else if (endDateFilter) {
+            const filterEnd = new Date(Date.UTC(endDateFilter.getFullYear(), endDateFilter.getMonth(), endDateFilter.getDate(), 23, 59, 59, 999));
+            where.startDate.lte = filterEnd;
         }
     }
-    let allTournaments = await prisma.tournament.findMany({
-        where,
-        orderBy: { startDate: 'asc' },
-    });
     if (filters.skillLevels && filters.skillLevels.length > 0) {
-        allTournaments = allTournaments.filter((t) => matchesSkillLevels(t.skillLevels, filters.skillLevels));
+        where.skillLevels = {
+            some: {
+                skillLevel: { in: filters.skillLevels },
+            },
+        };
     }
-    const total = allTournaments.length;
-    const tournaments = allTournaments.slice(skip, skip + take);
+    const [tournaments, total] = await Promise.all([
+        prisma.tournament.findMany({
+            where,
+            orderBy: { startDate: 'asc' },
+            skip,
+            take,
+            include: {
+                skillLevels: true,
+            },
+        }),
+        prisma.tournament.count({ where }),
+    ]);
     return { tournaments, total };
 }
 export async function getTournamentById(id) {
     return prisma.tournament.findUnique({
         where: { id },
+        include: {
+            skillLevels: true,
+        },
     });
 }
 export async function upsertTournaments(tournaments) {
@@ -61,6 +72,9 @@ export async function upsertTournaments(tournaments) {
                 const existing = await tx.tournament.findFirst({
                     where: { sourceUrl: tournament.sourceUrl },
                 });
+                const skillLevelsData = tournament.skillLevels.map((level) => ({
+                    skillLevel: level,
+                }));
                 if (existing) {
                     await tx.tournament.update({
                         where: { id: existing.id },
@@ -71,8 +85,11 @@ export async function upsertTournaments(tournaments) {
                             state: tournament.state,
                             startDate: tournament.startDate,
                             endDate: tournament.endDate,
-                            skillLevels: JSON.stringify(tournament.skillLevels),
                             description: tournament.description,
+                            skillLevels: {
+                                deleteMany: {},
+                                create: skillLevelsData,
+                            },
                         },
                     });
                     result.updated++;
@@ -88,8 +105,10 @@ export async function upsertTournaments(tournaments) {
                             state: tournament.state,
                             startDate: tournament.startDate,
                             endDate: tournament.endDate,
-                            skillLevels: JSON.stringify(tournament.skillLevels),
                             description: tournament.description,
+                            skillLevels: {
+                                create: skillLevelsData,
+                            },
                         },
                     });
                     result.created++;
