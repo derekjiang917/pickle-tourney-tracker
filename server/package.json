@@ -10,6 +10,8 @@
     "start:server": "npm run build && npm run start",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "scrape": "curl -s -X POST http://localhost:3001/api/scrape/trigger",
     "scrape:maincourt": "curl -s -X POST http://localhost:3001/api/scrape/trigger -H \"Content-Type: application/json\" -d '{\"source\": \"maincourt.com\"}'",
     "scrape:pickleballtournaments": "curl -s -X POST http://localhost:3001/api/scrape/trigger -H \"Content-Type: application/json\" -d '{\"source\": \"pickleballtournaments.com\"}'"
@@ -37,6 +39,7 @@
     "eslint": "^8.57.0",
     "prisma": "^7.4.2",
     "tsx": "^4.19.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "vitest": "^4.0.18"
   }
 }
