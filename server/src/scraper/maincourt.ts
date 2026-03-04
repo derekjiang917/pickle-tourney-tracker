@@ -193,7 +193,17 @@ export async function scrapeMaincourtTournament(url: string): Promise<ScrapedTou
       skillLevels.push(...extractedSkills);
     }
 
-    const description = sanitizeString($('.division__notes__inner').first().text(), true);
+    const notesHtml = $('.division__notes__inner').first().html() || '';
+    const descriptionText = notesHtml
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .trim();
+    const description = sanitizeString(descriptionText, true);
 
     const imageUrl = $('#listing-hub-image').attr('src');
 

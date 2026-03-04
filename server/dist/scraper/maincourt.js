@@ -152,7 +152,17 @@ export async function scrapeMaincourtTournament(url) {
             const extractedSkills = parseSkillLevels(skillText);
             skillLevels.push(...extractedSkills);
         }
-        const description = sanitizeString($('.division__notes__inner').first().text(), true);
+        const notesElement = $('.division__notes__inner').first();
+        let descriptionText = '';
+        notesElement.contents().each((_, el) => {
+            if (el.type === 'text') {
+                descriptionText += el.data;
+            }
+            else if (el.type === 'tag' && $(el).is('br')) {
+                descriptionText += '\n';
+            }
+        });
+        const description = sanitizeString(descriptionText, true);
         const imageUrl = $('#listing-hub-image').attr('src');
         return createTournament(SOURCE_NAME, {
             name,
