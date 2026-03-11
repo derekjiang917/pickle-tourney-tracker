@@ -230,7 +230,7 @@ describe('Maincourt Integration Tests', () => {
       const testCases = [
         { input: '3.0 Division', expected: ['3.0'] },
         { input: '3.5 Division', expected: ['3.5'] },
-        { input: '4.0+ Division', expected: ['4.0', '4.5', '5.0', '5.0+'] },
+        { input: '4.0+ Division', expected: ['4.0', '4.5', '5.0', '5.5', '6.0'] },
         { input: 'Open Division', expected: [] },
       ];
 

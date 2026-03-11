@@ -64,7 +64,8 @@ describe('extractMaincourtSkillLevel', () => {
     expect(result).toContain('4.0');
     expect(result).toContain('4.5');
     expect(result).toContain('5.0');
-    expect(result).toContain('5.0+');
+    expect(result).toContain('5.5');
+    expect(result).toContain('6.0');
   });
 
   it('returns empty array for no match', () => {

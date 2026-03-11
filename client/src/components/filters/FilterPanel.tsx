@@ -16,7 +16,7 @@ interface FilterPanelProps {
   onClearFilters: () => void;
 }
 
-const SKILL_LEVELS = ['2.0', '2.5', '3.0', '3.5', '4.0', '4.5', '5.0+'];
+const SKILL_LEVELS = ['3.0', '3.5', '4.0', '4.5', '5.0+'];
 
 export function FilterPanel({ filters, onFiltersChange, onClearFilters }: FilterPanelProps) {
   const [localLocation, setLocalLocation] = useState(filters.location);
@@ -112,7 +112,6 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
 
 function getSkillLevelColor(level: string): string {
   const numLevel = parseFloat(level.replace('5.0+', '5.0'));
-  if (numLevel <= 2.5) return 'bg-green-600 hover:bg-green-700';
   if (numLevel <= 3.5) return 'bg-yellow-600 hover:bg-yellow-700';
   if (numLevel <= 4.5) return 'bg-orange-600 hover:bg-orange-700';
   return 'bg-red-600 hover:bg-red-700';

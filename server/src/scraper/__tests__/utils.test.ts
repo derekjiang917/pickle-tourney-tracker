@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   parseDate,
   parseSkillLevels,
+  parseSkillInterval,
   extractCityState,
   sanitizeString,
   extractDomain,
@@ -76,6 +77,42 @@ describe('parseSkillLevels', () => {
 
   it('handles empty string', () => {
     expect(parseSkillLevels('')).toEqual([]);
+  });
+});
+
+describe('parseSkillInterval', () => {
+  it('parses 3.0 - 3.9 interval', () => {
+    expect(parseSkillInterval('3.0 - 3.9')).toEqual(['3.0', '3.5']);
+  });
+
+  it('parses 4.5 - 4.9 interval', () => {
+    expect(parseSkillInterval('4.5 - 4.9')).toEqual(['4.5']);
+  });
+
+  it('parses 5.0 - 5.5 interval', () => {
+    expect(parseSkillInterval('5.0 - 5.5')).toEqual(['5.0', '5.5']);
+  });
+
+  it('parses 3.0 - 3.4 interval', () => {
+    expect(parseSkillInterval('3.0 - 3.4')).toEqual(['3.0']);
+  });
+
+  it('parses 3.5 - 3.9 interval', () => {
+    expect(parseSkillInterval('3.5 - 3.9')).toEqual(['3.5']);
+  });
+
+  it('parses 4.0 - 4.4 interval', () => {
+    expect(parseSkillInterval('4.0 - 4.4')).toEqual(['4.0']);
+  });
+
+  it('handles en dash separator', () => {
+    expect(parseSkillInterval('3.0 – 3.9')).toEqual(['3.0', '3.5']);
+  });
+
+  it('returns empty array for invalid interval', () => {
+    expect(parseSkillInterval('3.0')).toEqual([]);
+    expect(parseSkillInterval('')).toEqual([]);
+    expect(parseSkillInterval('Beginner')).toEqual([]);
   });
 });
 

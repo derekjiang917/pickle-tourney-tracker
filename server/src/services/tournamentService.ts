@@ -47,9 +47,20 @@ export async function getTournaments({
   }
 
   if (filters.skillLevels && filters.skillLevels.length > 0) {
+    const levelValues = filters.skillLevels;
+    const has5_0Plus = levelValues.includes('5.0+');
+    const numericLevels = levelValues.filter((l) => l !== '5.0+');
+
     where.skillLevels = {
       some: {
-        skillLevel: { in: filters.skillLevels },
+        OR: [
+          { skillLevel: { in: numericLevels } },
+          ...(has5_0Plus
+            ? [
+                { skillLevel: { in: ['5.0', '5.5', '6.0'] } },
+              ]
+            : []),
+        ],
       },
     };
   }

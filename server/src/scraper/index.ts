@@ -9,11 +9,13 @@ import {
 import {
   parseDate,
   parseSkillLevels,
+  parseSkillInterval,
   extractCityState,
   sanitizeString,
   extractDomain,
   DEFAULT_USER_AGENT,
   createTournament,
+  ALL_SKILL_LEVELS,
 } from './utils.js';
 import { registry } from './registry.js';
 
@@ -94,6 +96,7 @@ export {
   scrapeWithRetry,
   parseDate,
   parseSkillLevels,
+  parseSkillInterval,
   extractCityState,
   sanitizeString,
   extractDomain,
@@ -101,6 +104,7 @@ export {
   orchestrator,
   ScraperOrchestrator,
   DEFAULT_USER_AGENT,
+  ALL_SKILL_LEVELS,
   registry,
 };
 

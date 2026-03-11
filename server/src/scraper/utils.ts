@@ -3,6 +3,22 @@ import { ScrapedTournament } from './types.js';
 export const DEFAULT_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
+export const ALL_SKILL_LEVELS = [
+  '3.0',
+  '3.5',
+  '4.0',
+  '4.5',
+  '5.0',
+  '5.5',
+  '6.0',
+] as const;
+
+export const TEXT_SKILL_LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Expert', 'Open', 'Pro'] as const;
+
+export type NumericSkillLevel = (typeof ALL_SKILL_LEVELS)[number];
+export type TextSkillLevel = (typeof TEXT_SKILL_LEVELS)[number];
+export type SkillLevel = NumericSkillLevel | TextSkillLevel;
+
 export function parseDate(dateStr: string): string | null {
   const cleaned = dateStr.trim();
   const match = cleaned.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
@@ -33,6 +49,24 @@ export function parseSkillLevels(skillLevelsText: string): string[] {
   }
 
   return [...new Set(levels)];
+}
+
+export function parseSkillInterval(intervalText: string): string[] {
+  const match = intervalText.match(/([\d.]+)\s*[-–]\s*([\d.]+)/);
+  if (!match) return [];
+
+  const minLevel = parseFloat(match[1]);
+  const maxLevel = parseFloat(match[2]);
+
+  const levels: string[] = [];
+  for (const level of ALL_SKILL_LEVELS) {
+    const levelNum = parseFloat(level);
+    if (levelNum >= minLevel && levelNum <= maxLevel) {
+      levels.push(level);
+    }
+  }
+
+  return levels;
 }
 
 export function extractCityState(locationStr: string): { city: string; state: string } {

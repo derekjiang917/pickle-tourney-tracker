@@ -3,9 +3,11 @@ import { ScrapedTournament, Scraper } from './types.js';
 import {
   parseDate,
   parseSkillLevels,
+  parseSkillInterval,
   extractCityState,
   sanitizeString,
   createTournament,
+  ALL_SKILL_LEVELS,
 } from './utils.js';
 import { fetchHtmlWithRetry } from './puppeteer.js';
 
@@ -178,13 +180,25 @@ export async function scrapeMaincourtTournament(url: string): Promise<ScrapedTou
 
     const skillLevels: string[] = [];
 
-    const divisionTitles = $('.divi__list');
-    divisionTitles.each((_, el) => {
-      const titleElement = $(el).find('.divi__list__title');
-      const titleText = titleElement.text().trim();
-      const extractedFromTitle = extractMaincourtSkillLevel(titleText);
-      skillLevels.push(...extractedFromTitle);
+    const yellowBallItems = $('.divi__row__left__list').filter((_, el) => {
+      return $(el).find('.icon-ball.yellow').length > 0;
     });
+
+    yellowBallItems.each((_, el) => {
+      const intervalText = $(el).text().trim();
+      const extractedFromInterval = parseSkillInterval(intervalText);
+      skillLevels.push(...extractedFromInterval);
+    });
+
+    if (skillLevels.length === 0) {
+      const divisionTitles = $('.divi__list');
+      divisionTitles.each((_, el) => {
+        const titleElement = $(el).find('.divi__list__title');
+        const titleText = titleElement.text().trim();
+        const extractedFromTitle = extractMaincourtSkillLevel(titleText);
+        skillLevels.push(...extractedFromTitle);
+      });
+    }
 
     if (skillLevels.length === 0) {
       const skillText = $('.divi__row__left__list .icon-ball').parent().text();
@@ -286,19 +300,18 @@ export function extractMaincourtDates(
 
 export function extractMaincourtSkillLevel(title: string): string[] {
   const levels: string[] = [];
-  const allLevels = ['3.0', '3.5', '4.0', '4.5', '5.0', '5.0+'];
 
   const match = title.match(/^([\d.]+)\+?\s/);
   if (match) {
     const baseLevel = match[1];
 
     if (title.includes('+')) {
-      const baseIndex = allLevels.indexOf(baseLevel);
+      const baseIndex = ALL_SKILL_LEVELS.indexOf(baseLevel as typeof ALL_SKILL_LEVELS[number]);
       if (baseIndex !== -1) {
-        levels.push(...allLevels.slice(baseIndex));
+        levels.push(...ALL_SKILL_LEVELS.slice(baseIndex));
       } else {
         levels.push(baseLevel);
-        levels.push('5.0+');
+        levels.push('5.5');
       }
     } else {
       levels.push(baseLevel);
