@@ -86,15 +86,6 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
               </div>
             )}
 
-            {tournament.description && (
-              <div>
-                <h3 className="font-semibold mb-2">About</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {tournament.description}
-                </p>
-              </div>
-            )}
-
             <div className="pt-2">
               <Button asChild className="w-full">
                 <a
@@ -107,6 +98,15 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
                 </a>
               </Button>
             </div>
+
+            {tournament.description && (
+              <div>
+                <h3 className="font-semibold mb-2">About</h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {tournament.description}
+                </p>
+              </div>
+            )}
           </div>
 
           {tournament.imageUrl && (
