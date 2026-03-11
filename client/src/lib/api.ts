@@ -6,8 +6,7 @@ const RETRY_DELAY = 1000;
 
 export interface TournamentFilters {
   location?: string;
-  startDate?: string;
-  endDate?: string;
+  date?: string;
   skillLevels?: string[];
 }
 
@@ -96,11 +95,8 @@ export async function fetchTournaments(
   if (filters.location) {
     searchParams.set('location', filters.location);
   }
-  if (filters.startDate) {
-    searchParams.set('startDate', filters.startDate);
-  }
-  if (filters.endDate) {
-    searchParams.set('endDate', filters.endDate);
+  if (filters.date) {
+    searchParams.set('date', filters.date);
   }
   if (filters.skillLevels && filters.skillLevels.length > 0) {
     filters.skillLevels.forEach((level) => {

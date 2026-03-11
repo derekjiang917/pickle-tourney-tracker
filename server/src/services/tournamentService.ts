@@ -6,8 +6,7 @@ const prisma = new PrismaClient({ adapter });
 
 export interface TournamentFilters {
   location?: string;
-  startDate?: Date;
-  endDate?: Date;
+  date?: string;
   skillLevels?: string[];
 }
 
@@ -38,24 +37,13 @@ export async function getTournaments({
     ];
   }
 
-  if (filters.startDate || filters.endDate) {
-    const startDateFilter = filters.startDate ? new Date(filters.startDate) : null;
-    const endDateFilter = filters.endDate ? new Date(filters.endDate) : null;
-    
-    where.startDate = {};
-    
-    if (startDateFilter && endDateFilter) {
-      const filterStart = new Date(Date.UTC(startDateFilter.getFullYear(), startDateFilter.getMonth(), startDateFilter.getDate(), 0, 0, 0, 0));
-      const filterEnd = new Date(Date.UTC(endDateFilter.getFullYear(), endDateFilter.getMonth(), endDateFilter.getDate(), 23, 59, 59, 999));
-      where.startDate.gte = filterStart;
-      where.startDate.lte = filterEnd;
-    } else if (startDateFilter) {
-      const filterStart = new Date(Date.UTC(startDateFilter.getFullYear(), startDateFilter.getMonth(), startDateFilter.getDate(), 0, 0, 0, 0));
-      where.startDate.gte = filterStart;
-    } else if (endDateFilter) {
-      const filterEnd = new Date(Date.UTC(endDateFilter.getFullYear(), endDateFilter.getMonth(), endDateFilter.getDate(), 23, 59, 59, 999));
-      where.startDate.lte = filterEnd;
-    }
+  if (filters.date) {
+    where.startDate = {
+      lte: filters.date,
+    };
+    where.endDate = {
+      gte: filters.date,
+    };
   }
 
   if (filters.skillLevels && filters.skillLevels.length > 0) {
@@ -98,8 +86,8 @@ export interface ScrapedTournamentInput {
   location: string;
   city: string;
   state: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   skillLevels: string[];
   description?: string;
   imageUrl?: string;

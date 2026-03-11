@@ -14,8 +14,8 @@ model Tournament {
   location    String
   city        String
   state       String
-  startDate   DateTime
-  endDate     DateTime
+  startDate   String
+  endDate     String
   description String?
   imageUrl    String?
   createdAt   DateTime @default(now())

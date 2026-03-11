@@ -46,8 +46,7 @@ export function TournamentList({
       try {
         const apiFilters: TournamentFilters = {
           location: filters.location || undefined,
-          startDate: filters.startDate || undefined,
-          endDate: filters.endDate || undefined,
+          date: filters.date || undefined,
           skillLevels: filters.skillLevels.length > 0 ? filters.skillLevels : undefined,
         };
         

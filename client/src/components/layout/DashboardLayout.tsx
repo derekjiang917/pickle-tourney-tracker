@@ -36,7 +36,7 @@ export function DashboardLayout({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const hasActiveFilters = filters.location || filters.startDate || filters.endDate || filters.skillLevels.length > 0;
+  const hasActiveFilters = filters.location || filters.date || filters.skillLevels.length > 0;
 
   const formatLastUpdated = (dateString: string | null | undefined) => {
     if (!dateString) return null;

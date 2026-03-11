@@ -158,8 +158,8 @@ export async function scrapePickleballTournamentPage(
       }
     }
 
-    let startDate = new Date();
-    let endDate = new Date();
+    let startDate = '';
+    let endDate = '';
 
     const dateSelectors = ['[class*="date"]', 'span:contains("202")', '[class*="When"]'];
 
@@ -232,8 +232,8 @@ export async function scrapePickleballTournamentPage(
 
 export function extractPickleballTournamentsDates(
   text: string
-): { startDate: Date | null; endDate: Date | null } {
-  const result = { startDate: null as Date | null, endDate: null as Date | null };
+): { startDate: string | null; endDate: string | null } {
+  const result = { startDate: null as string | null, endDate: null as string | null };
 
   const rangePattern =
     /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*[-–]\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
@@ -324,8 +324,8 @@ export function parsePickleballTournamentJson(t: unknown): ScrapedTournament | n
   city = cs.city || cityStr;
   state = cs.state || stateStr;
 
-  let startDate = new Date();
-  let endDate = new Date();
+  let startDate = '';
+  let endDate = '';
 
   const startDateVal =
     (tournament.startDate as string) || (tournament.start_date as string);
@@ -333,8 +333,10 @@ export function parsePickleballTournamentJson(t: unknown): ScrapedTournament | n
     (tournament.endDate as string) || (tournament.end_date as string);
 
   if (startDateVal) {
-    startDate = parseDate(startDateVal) || new Date();
-    endDate = endDateVal ? (parseDate(endDateVal) || startDate) : startDate;
+    const parsedStart = parseDate(startDateVal);
+    const parsedEnd = endDateVal ? parseDate(endDateVal) : null;
+    startDate = parsedStart || '';
+    endDate = parsedEnd || parsedStart || '';
   }
 
   const skillLevels = parseSkillLevels(JSON.stringify(tournament));

@@ -5,7 +5,6 @@ import {
   parseSkillLevels,
   extractCityState,
   sanitizeString,
-  toPacificTime,
   createTournament,
 } from './utils.js';
 import { fetchHtmlWithRetry } from './puppeteer.js';
@@ -152,8 +151,8 @@ export async function scrapeMaincourtTournament(url: string): Promise<ScrapedTou
       state = s;
     }
 
-    let startDate = new Date();
-    let endDate = new Date();
+    let startDate = '';
+    let endDate = '';
 
     const dateItem = $('.division__card__list__item').filter((_, el) => {
       return $(el).find('.icon-new-calendar').length > 0;
@@ -163,8 +162,8 @@ export async function scrapeMaincourtTournament(url: string): Promise<ScrapedTou
       const dateText = dateItem.text().trim();
       const dates = extractMaincourtDates(dateText);
       if (dates.startDate) {
-        startDate = toPacificTime(dates.startDate);
-        endDate = toPacificTime(dates.endDate || dates.startDate);
+        startDate = dates.startDate;
+        endDate = dates.endDate || dates.startDate;
       }
     }
 
@@ -228,8 +227,8 @@ export async function scrapeMaincourtTournament(url: string): Promise<ScrapedTou
 
 export function extractMaincourtDates(
   text: string
-): { startDate: Date | null; endDate: Date | null } {
-  const result = { startDate: null as Date | null, endDate: null as Date | null };
+): { startDate: string | null; endDate: string | null } {
+  const result = { startDate: null as string | null, endDate: null as string | null };
 
   const rangePattern = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*[-–]\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
   const rangeMatch = text.match(rangePattern);
@@ -379,8 +378,8 @@ export function parseMaincourtJsonTournament(t: unknown): ScrapedTournament | nu
   city = cs.city || cityStr;
   state = cs.state || stateStr;
 
-  let startDate = new Date();
-  let endDate = new Date();
+  let startDate = '';
+  let endDate = '';
 
   const startDateVal =
     (tournament.startDate as string) ||
@@ -389,8 +388,10 @@ export function parseMaincourtJsonTournament(t: unknown): ScrapedTournament | nu
   const endDateVal = (tournament.endDate as string) || (tournament.end_date as string);
 
   if (startDateVal) {
-    startDate = parseDate(startDateVal) || new Date();
-    endDate = endDateVal ? (parseDate(endDateVal) || startDate) : startDate;
+    const parsedStart = parseDate(startDateVal);
+    const parsedEnd = endDateVal ? parseDate(endDateVal) : null;
+    startDate = parsedStart || '';
+    endDate = parsedEnd || parsedStart || '';
   }
 
   const skillLevels = parseSkillLevels(JSON.stringify(tournament));

@@ -13,8 +13,7 @@ export interface TournamentFiltersState {
 export function useTournamentFilters(): TournamentFiltersState {
   const [filters, setFiltersState] = useState<FilterState>({
     location: '',
-    startDate: '',
-    endDate: '',
+    date: '',
     skillLevels: [],
   });
   const [page, setPageState] = useState(1);
@@ -23,12 +22,11 @@ export function useTournamentFilters(): TournamentFiltersState {
     const params = new URLSearchParams(window.location.search);
     
     const location = params.get('location') || '';
-    const startDate = params.get('startDate') || '';
-    const endDate = params.get('endDate') || '';
+    const date = params.get('date') || '';
     const skillLevels = params.get('skillLevels')?.split(',').filter(Boolean) || [];
     const pageParam = parseInt(params.get('page') || '1', 10);
 
-    setFiltersState({ location, startDate, endDate, skillLevels });
+    setFiltersState({ location, date, skillLevels });
     setPageState(pageParam);
   }, []);
 
@@ -36,8 +34,7 @@ export function useTournamentFilters(): TournamentFiltersState {
     const params = new URLSearchParams();
     
     if (newFilters.location) params.set('location', newFilters.location);
-    if (newFilters.startDate) params.set('startDate', newFilters.startDate);
-    if (newFilters.endDate) params.set('endDate', newFilters.endDate);
+    if (newFilters.date) params.set('date', newFilters.date);
     if (newFilters.skillLevels.length > 0) {
       params.set('skillLevels', newFilters.skillLevels.join(','));
     }
@@ -64,8 +61,7 @@ export function useTournamentFilters(): TournamentFiltersState {
   const clearFilters = useCallback(() => {
     const emptyFilters: FilterState = {
       location: '',
-      startDate: '',
-      endDate: '',
+      date: '',
       skillLevels: [],
     };
     setFiltersState(emptyFilters);
@@ -76,8 +72,7 @@ export function useTournamentFilters(): TournamentFiltersState {
   const getQueryParams = useCallback(() => {
     const params = new URLSearchParams();
     if (filters.location) params.set('location', filters.location);
-    if (filters.startDate) params.set('startDate', filters.startDate);
-    if (filters.endDate) params.set('endDate', filters.endDate);
+    if (filters.date) params.set('date', filters.date);
     if (filters.skillLevels.length > 0) {
       params.set('skillLevels', filters.skillLevels.join(','));
     }

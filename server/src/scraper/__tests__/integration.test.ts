@@ -203,8 +203,8 @@ describe('Maincourt Integration Tests', () => {
 
       testCases.forEach(({ input, expectedStart, expectedEnd }) => {
         const result = extractMaincourtDates(input);
-        expect(result.startDate?.toISOString().split('T')[0]).toBe(expectedStart);
-        expect(result.endDate?.toISOString().split('T')[0]).toBe(expectedEnd);
+        expect(result.startDate).toBe(expectedStart);
+        expect(result.endDate).toBe(expectedEnd);
       });
     });
 
@@ -220,8 +220,8 @@ describe('Maincourt Integration Tests', () => {
 
       expect(dates.startDate).not.toBeNull();
       expect(dates.endDate).not.toBeNull();
-      expect(dates.startDate?.toISOString().split('T')[0]).toBe('2024-01-15');
-      expect(dates.endDate?.toISOString().split('T')[0]).toBe('2024-01-20');
+      expect(dates.startDate).toBe('2024-01-15');
+      expect(dates.endDate).toBe('2024-01-20');
     });
   });
 
@@ -386,8 +386,8 @@ describe('PickleballTournaments Integration Tests', () => {
 
       testCases.forEach(({ input, expectedStart, expectedEnd }) => {
         const result = extractPickleballTournamentsDates(input);
-        expect(result.startDate?.toISOString().split('T')[0]).toBe(expectedStart);
-        expect(result.endDate?.toISOString().split('T')[0]).toBe(expectedEnd);
+        expect(result.startDate).toBe(expectedStart);
+        expect(result.endDate).toBe(expectedEnd);
       });
     });
   });

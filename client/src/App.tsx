@@ -24,7 +24,7 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const hasActiveFilters = Boolean(filters.location || filters.startDate || filters.endDate || filters.skillLevels.length > 0);
+  const hasActiveFilters = Boolean(filters.location || filters.date || filters.skillLevels.length > 0);
 
   return (
     <DashboardLayout

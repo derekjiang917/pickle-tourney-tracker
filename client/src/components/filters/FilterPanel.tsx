@@ -6,8 +6,7 @@ import { X, Filter } from 'lucide-react';
 
 export interface FilterState {
   location: string;
-  startDate: string;
-  endDate: string;
+  date: string;
   skillLevels: string[];
 }
 
@@ -43,15 +42,11 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
     onFiltersChange({ ...filters, skillLevels: newLevels });
   }, [filters, onFiltersChange]);
 
-  const handleStartDateChange = (value: string) => {
-    onFiltersChange({ ...filters, startDate: value });
+  const handleDateChange = (value: string) => {
+    onFiltersChange({ ...filters, date: value });
   };
 
-  const handleEndDateChange = (value: string) => {
-    onFiltersChange({ ...filters, endDate: value });
-  };
-
-  const hasActiveFilters = filters.location || filters.startDate || filters.endDate || filters.skillLevels.length > 0;
+  const hasActiveFilters = filters.location || filters.date || filters.skillLevels.length > 0;
 
   return (
     <div className="space-y-6">
@@ -75,26 +70,14 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="startDate" className="text-sm font-medium">
-            Start Date
+          <label htmlFor="date" className="text-sm font-medium">
+            Date
           </label>
           <Input
-            id="startDate"
+            id="date"
             type="date"
-            value={filters.startDate}
-            onChange={(e) => handleStartDateChange(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="endDate" className="text-sm font-medium">
-            End Date
-          </label>
-          <Input
-            id="endDate"
-            type="date"
-            value={filters.endDate}
-            onChange={(e) => handleEndDateChange(e.target.value)}
+            value={filters.date}
+            onChange={(e) => handleDateChange(e.target.value)}
           />
         </div>
 

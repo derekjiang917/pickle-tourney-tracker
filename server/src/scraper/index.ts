@@ -12,7 +12,6 @@ import {
   extractCityState,
   sanitizeString,
   extractDomain,
-  toPacificTime,
   DEFAULT_USER_AGENT,
   createTournament,
 } from './utils.js';
@@ -98,7 +97,6 @@ export {
   extractCityState,
   sanitizeString,
   extractDomain,
-  toPacificTime,
   createTournament,
   orchestrator,
   ScraperOrchestrator,

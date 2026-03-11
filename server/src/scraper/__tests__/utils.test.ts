@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseDate,
-  toPacificTime,
   parseSkillLevels,
   extractCityState,
   sanitizeString,
@@ -11,27 +10,27 @@ import {
 describe('parseDate', () => {
   it('parses MM/DD/YYYY format', () => {
     const result = parseDate('01/15/2024');
-    expect(result?.toISOString().split('T')[0]).toBe('2024-01-15');
+    expect(result).toBe('2024-01-15');
   });
 
   it('parses MM-DD-YYYY format', () => {
     const result = parseDate('01-15-2024');
-    expect(result?.toISOString().split('T')[0]).toBe('2024-01-15');
+    expect(result).toBe('2024-01-15');
   });
 
   it('parses M/D/YYYY format', () => {
     const result = parseDate('1/5/2024');
-    expect(result?.toISOString().split('T')[0]).toBe('2024-01-05');
+    expect(result).toBe('2024-01-05');
   });
 
   it('parses Month DD, YYYY format', () => {
     const result = parseDate('January 15, 2024');
-    expect(result?.toISOString().split('T')[0]).toBe('2024-01-15');
+    expect(result).toBe('2024-01-15');
   });
 
   it('parses Mon DD YYYY format', () => {
     const result = parseDate('Jan 15 2024');
-    expect(result?.toISOString().split('T')[0]).toBe('2024-01-15');
+    expect(result).toBe('2024-01-15');
   });
 
   it('returns null for invalid date', () => {
@@ -41,22 +40,7 @@ describe('parseDate', () => {
 
   it('handles whitespace', () => {
     const result = parseDate('  01/15/2024  ');
-    expect(result?.toISOString().split('T')[0]).toBe('2024-01-15');
-  });
-});
-
-describe('toPacificTime', () => {
-  it('returns a Date object with modified hours', () => {
-    const inputDate = new Date();
-    const pacificDate = toPacificTime(inputDate);
-    expect(pacificDate).toBeInstanceOf(Date);
-    expect(pacificDate).not.toBe(inputDate);
-  });
-
-  it('returns a new Date object', () => {
-    const original = new Date('2024-01-15T12:00:00Z');
-    const pacific = toPacificTime(original);
-    expect(pacific).not.toBe(original);
+    expect(result).toBe('2024-01-15');
   });
 });
 

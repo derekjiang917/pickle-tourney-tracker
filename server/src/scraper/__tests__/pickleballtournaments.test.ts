@@ -23,20 +23,20 @@ vi.mock('puppeteer', () => ({
 describe('extractPickleballTournamentsDates', () => {
   it('parses date range MM/DD/YYYY - MM/DD/YYYY', () => {
     const result = extractPickleballTournamentsDates('01/15/2024 - 01/20/2024');
-    expect(result.startDate?.toISOString().split('T')[0]).toBe('2024-01-15');
-    expect(result.endDate?.toISOString().split('T')[0]).toBe('2024-01-20');
+    expect(result.startDate).toBe('2024-01-15');
+    expect(result.endDate).toBe('2024-01-20');
   });
 
   it('parses single date', () => {
     const result = extractPickleballTournamentsDates('01/15/2024');
-    expect(result.startDate?.toISOString().split('T')[0]).toBe('2024-01-15');
-    expect(result.endDate?.toISOString().split('T')[0]).toBe('2024-01-15');
+    expect(result.startDate).toBe('2024-01-15');
+    expect(result.endDate).toBe('2024-01-15');
   });
 
   it('parses month name range', () => {
     const result = extractPickleballTournamentsDates('January 15, 2024 - January 20, 2024');
-    expect(result.startDate?.toISOString().split('T')[0]).toBe('2024-01-15');
-    expect(result.endDate?.toISOString().split('T')[0]).toBe('2024-01-20');
+    expect(result.startDate).toBe('2024-01-15');
+    expect(result.endDate).toBe('2024-01-20');
   });
 
   it('handles invalid input', () => {
