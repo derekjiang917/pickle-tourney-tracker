@@ -126,7 +126,7 @@ describe('extractCityState', () => {
   it('extracts city and state from "City, State ZIP"', () => {
     const result = extractCityState('San Diego, CA 92101');
     expect(result.city).toBe('San Diego');
-    expect(result.state).toBe('CA 92101');
+    expect(result.state).toBe('CA');
   });
 
   it('returns empty strings for invalid input', () => {

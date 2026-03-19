@@ -73,7 +73,8 @@ export function extractCityState(locationStr: string): { city: string; state: st
   const parts = locationStr.split(',').map((p) => p.trim());
 
   if (parts.length >= 2) {
-    const state = parts[parts.length - 1].trim();
+    // Strip postal code (e.g. "CA 92110" → "CA")
+    const state = parts[parts.length - 1].replace(/\s+\d{5}(-\d{4})?$/, '').trim();
     const city = parts[parts.length - 2].trim();
     return { city, state };
   }
