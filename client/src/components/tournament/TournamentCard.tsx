@@ -48,8 +48,8 @@ export function TournamentCard({ tournament, onSelect }: TournamentCardProps) {
   };
 
   return (
-    <Card 
-      className="flex flex-col h-full transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+    <Card
+      className="flex flex-col h-full transition-all duration-200 hover:shadow-[0_0_0_1px_rgba(34,197,94,0.3),0_8px_24px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 cursor-pointer border-border/60"
       onClick={handleCardClick}
     >
       <CardHeader>
@@ -85,7 +85,7 @@ export function TournamentCard({ tournament, onSelect }: TournamentCardProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button asChild className="w-full" onClick={handleSignUpClick}>
+        <Button asChild className="w-full text-white font-medium" onClick={handleSignUpClick}>
           <a href={tournament.sourceUrl} target="_blank" rel="noopener noreferrer">
             Sign Up
           </a>

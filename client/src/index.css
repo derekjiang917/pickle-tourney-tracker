@@ -1,33 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-background: #1a1a1a;
-  --color-foreground: #ededed;
-  --color-primary: #3b82f6;
+  --color-background: #0f0f0f;
+  --color-foreground: #e8e8e8;
+  --color-primary: #22c55e;
   --color-primary-foreground: #ffffff;
-  --color-card: #262626;
-  --color-card-foreground: #ededed;
-  --color-popover: #262626;
-  --color-popover-foreground: #ededed;
-  --color-secondary: #333333;
-  --color-secondary-foreground: #ededed;
-  --color-muted: #333333;
-  --color-muted-foreground: #a3a3a3;
-  --color-accent: #3b82f6;
+  --color-card: #181818;
+  --color-card-foreground: #e8e8e8;
+  --color-popover: #1a1a1a;
+  --color-popover-foreground: #e8e8e8;
+  --color-secondary: #242424;
+  --color-secondary-foreground: #e8e8e8;
+  --color-muted: #242424;
+  --color-muted-foreground: #888888;
+  --color-accent: #22c55e;
   --color-accent-foreground: #ffffff;
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
-  --color-border: #404040;
-  --color-input: #404040;
-  --color-ring: #3b82f6;
+  --color-border: #2a2a2a;
+  --color-input: #242424;
+  --color-ring: #22c55e;
   --radius: 0.5rem;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
 }
 
 @layer base {
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
+  html {
+    background-color: #0f0f0f;
+  }
+  html, body, #root {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    color: #e8e8e8;
+    min-height: 100%;
   }
 }
