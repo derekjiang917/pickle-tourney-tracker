@@ -8,6 +8,7 @@ export interface TournamentFilters {
   location?: string;
   date?: string;
   skillLevels?: string[];
+  upcomingOnly?: boolean;
 }
 
 export interface GetTournamentsParams {
@@ -44,6 +45,9 @@ export async function getTournaments({
     where.endDate = {
       gte: filters.date,
     };
+  } else if (filters.upcomingOnly) {
+    const today = new Date().toISOString().slice(0, 10);
+    where.endDate = { gte: today };
   }
 
   if (filters.skillLevels && filters.skillLevels.length > 0) {

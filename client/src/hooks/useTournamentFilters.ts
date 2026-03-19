@@ -15,6 +15,7 @@ export function useTournamentFilters(): TournamentFiltersState {
     location: '',
     date: '',
     skillLevels: [],
+    upcomingOnly: true,
   });
   const [page, setPageState] = useState(1);
 
@@ -25,8 +26,9 @@ export function useTournamentFilters(): TournamentFiltersState {
     const date = params.get('date') || '';
     const skillLevels = params.get('skillLevels')?.split(',').filter(Boolean) || [];
     const pageParam = parseInt(params.get('page') || '1', 10);
+    const upcomingOnly = params.get('upcomingOnly') !== 'false';
 
-    setFiltersState({ location, date, skillLevels });
+    setFiltersState({ location, date, skillLevels, upcomingOnly });
     setPageState(pageParam);
   }, []);
 
@@ -38,6 +40,7 @@ export function useTournamentFilters(): TournamentFiltersState {
     if (newFilters.skillLevels.length > 0) {
       params.set('skillLevels', newFilters.skillLevels.join(','));
     }
+    if (!newFilters.upcomingOnly) params.set('upcomingOnly', 'false');
     if (newPage > 1) params.set('page', String(newPage));
 
     const newURL = params.toString() 
@@ -63,6 +66,7 @@ export function useTournamentFilters(): TournamentFiltersState {
       location: '',
       date: '',
       skillLevels: [],
+      upcomingOnly: true,
     };
     setFiltersState(emptyFilters);
     setPageState(1);
@@ -76,6 +80,7 @@ export function useTournamentFilters(): TournamentFiltersState {
     if (filters.skillLevels.length > 0) {
       params.set('skillLevels', filters.skillLevels.join(','));
     }
+    if (!filters.upcomingOnly) params.set('upcomingOnly', 'false');
     return params;
   }, [filters]);
 

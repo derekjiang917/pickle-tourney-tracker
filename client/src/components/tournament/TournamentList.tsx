@@ -48,6 +48,7 @@ export function TournamentList({
           location: filters.location || undefined,
           date: filters.date || undefined,
           skillLevels: filters.skillLevels.length > 0 ? filters.skillLevels : undefined,
+          upcomingOnly: filters.upcomingOnly,
         };
         
         const response = await fetchTournaments({

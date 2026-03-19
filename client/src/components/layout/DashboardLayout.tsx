@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FilterPanel, FilterState } from '@/components/filters/FilterPanel';
 import { Button } from '@/components/ui/button';
-import { Filter, X, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Filter, Clock, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
@@ -19,24 +19,10 @@ export function DashboardLayout({
   onClearFilters,
   lastUpdated,
 }: DashboardLayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isMobileSheetOpen, setIsMobileSheetOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(true);
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setIsMobileSheetOpen(false);
-      }
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const hasActiveFilters = filters.location || filters.date || filters.skillLevels.length > 0;
+  const hasActiveFilters =
+    filters.location || filters.date || filters.skillLevels.length > 0 || !filters.upcomingOnly;
 
   const formatLastUpdated = (dateString: string | null | undefined) => {
     if (!dateString) return null;
@@ -52,113 +38,57 @@ export function DashboardLayout({
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border sticky top-0 bg-background z-40">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        {/* Title row */}
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-primary">Pickle Tourney Tracker</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {lastUpdated && (
               <div className="hidden sm:flex items-center text-sm text-muted-foreground">
                 <Clock className="w-4 h-4 mr-1" />
                 <span>Updated {formatLastUpdated(lastUpdated)}</span>
               </div>
             )}
-            {isMobile && (
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setIsMobileSheetOpen(true)}
-                className={hasActiveFilters ? 'ring-2 ring-primary' : ''}
-              >
-                <Filter className="w-4 h-4" />
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={cn(hasActiveFilters && !isFilterOpen && 'ring-2 ring-primary')}
+            >
+              <Filter className="w-4 h-4 mr-1.5" />
+              Filters
+              {isFilterOpen ? (
+                <ChevronUp className="w-3.5 h-3.5 ml-1.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
+              )}
+            </Button>
           </div>
         </div>
-        {lastUpdated && isMobile && (
-          <div className="container mx-auto px-4 pb-2 flex items-center text-sm text-muted-foreground">
-            <Clock className="w-4 h-4 mr-1" />
-            <span>Updated {formatLastUpdated(lastUpdated)}</span>
-          </div>
-        )}
-      </header>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-6">
-          {/* Desktop Sidebar */}
-          {!isMobile && (
-            <aside 
-              className={cn(
-                "flex-shrink-0 transition-all duration-300 ease-in-out",
-                isSidebarOpen ? "w-72" : "w-0 overflow-hidden"
-              )}
-            >
-              <div className="sticky top-24">
+        {/* Collapsible filter bar */}
+        <div
+          className={cn(
+            'grid transition-[grid-template-rows] duration-300 ease-in-out',
+            isFilterOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="border-t border-border">
+              <div className="container mx-auto px-4 py-3">
                 <FilterPanel
                   filters={filters}
                   onFiltersChange={onFiltersChange}
                   onClearFilters={onClearFilters}
                 />
               </div>
-            </aside>
-          )}
-
-          {/* Toggle Sidebar Button (Desktop) */}
-          {!isMobile && (
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background border rounded-r-md p-1 hover:bg-secondary transition-colors"
-              style={{ left: isSidebarOpen ? '288px' : '0' }}
-            >
-              {isSidebarOpen ? (
-                <ChevronLeft className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </button>
-          )}
-
-          {/* Main Content */}
-          <main className="flex-1 min-w-0">
-            {children}
-          </main>
-        </div>
-      </div>
-
-      {/* Mobile Sheet */}
-      {isMobile && (
-        <>
-          <div 
-            className={cn(
-              "fixed inset-0 bg-black/50 z-50 transition-opacity duration-300",
-              isMobileSheetOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-            )}
-            onClick={() => setIsMobileSheetOpen(false)}
-          />
-          <div 
-            className={cn(
-              "fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] bg-background shadow-xl transition-transform duration-300 ease-in-out",
-              isMobileSheetOpen ? "translate-x-0" : "-translate-x-full"
-            )}
-          >
-            <div className="p-4 border-b flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Filters</h2>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={() => setIsMobileSheetOpen(false)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="p-4 overflow-y-auto h-[calc(100vh-65px)]">
-              <FilterPanel
-                filters={filters}
-                onFiltersChange={onFiltersChange}
-                onClearFilters={onClearFilters}
-              />
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-6">
+        {children}
+      </main>
     </div>
   );
 }

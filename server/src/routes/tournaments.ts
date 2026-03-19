@@ -5,7 +5,7 @@ import { formatPaginatedResponse } from '../utils/responseFormatter.js';
 const router = Router();
 
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  const { page = '1', limit = '10', location, date, skillLevels } = req.query;
+  const { page = '1', limit = '10', location, date, skillLevels, upcomingOnly } = req.query;
 
   const pageNum = parseInt(page as string, 10);
   const limitNum = parseInt(limit as string, 10);
@@ -18,6 +18,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     skillLevels: skillLevels
       ? (Array.isArray(skillLevels) ? skillLevels : [skillLevels]) as string[]
       : undefined,
+    upcomingOnly: upcomingOnly !== 'false',
   };
 
   try {
