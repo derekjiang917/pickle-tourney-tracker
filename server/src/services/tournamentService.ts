@@ -123,53 +123,47 @@ export async function upsertTournaments(tournaments: ScrapedTournamentInput[]): 
   await prisma.$transaction(async (tx) => {
     for (const tournament of tournaments) {
       try {
-        const existing = await tx.tournament.findFirst({
+        const isNew = !(await tx.tournament.findUnique({
           where: { sourceUrl: tournament.sourceUrl },
-        });
+          select: { id: true },
+        }));
 
         const skillLevelsData = tournament.skillLevels.map((level) => ({
           skillLevel: level,
         }));
 
-        if (existing) {
-          await tx.tournament.update({
-            where: { id: existing.id },
-            data: {
-              name: tournament.name,
-              location: tournament.location,
-              city: tournament.city,
-              state: tournament.state,
-              startDate: tournament.startDate,
-              endDate: tournament.endDate,
-              description: tournament.description,
-              imageUrl: tournament.imageUrl,
-              skillLevels: {
-                deleteMany: {},
-                create: skillLevelsData,
-              },
+        const sharedData = {
+          name: tournament.name,
+          location: tournament.location,
+          city: tournament.city,
+          state: tournament.state,
+          startDate: tournament.startDate,
+          endDate: tournament.endDate,
+          description: tournament.description,
+          imageUrl: tournament.imageUrl,
+        };
+
+        await tx.tournament.upsert({
+          where: { sourceUrl: tournament.sourceUrl },
+          update: {
+            ...sharedData,
+            skillLevels: {
+              deleteMany: {},
+              create: skillLevelsData,
             },
-          });
-          result.updated++;
-        } else {
-          await tx.tournament.create({
-            data: {
-              name: tournament.name,
-              sourceUrl: tournament.sourceUrl,
-              source: tournament.source,
-              location: tournament.location,
-              city: tournament.city,
-              state: tournament.state,
-              startDate: tournament.startDate,
-              endDate: tournament.endDate,
-              description: tournament.description,
-              imageUrl: tournament.imageUrl,
-              skillLevels: {
-                create: skillLevelsData,
-              },
+          },
+          create: {
+            ...sharedData,
+            sourceUrl: tournament.sourceUrl,
+            source: tournament.source,
+            skillLevels: {
+              create: skillLevelsData,
             },
-          });
-          result.created++;
-        }
+          },
+        });
+
+        if (isNew) result.created++;
+        else result.updated++;
       } catch (error) {
         const msg = error instanceof Error ? error.message : 'Unknown error';
         result.errors.push(`Failed to upsert ${tournament.name}: ${msg}`);
