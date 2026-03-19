@@ -69,14 +69,22 @@ export function parseSkillInterval(intervalText: string): string[] {
   return levels;
 }
 
-export function extractCityState(locationStr: string): { city: string; state: string } {
-  const parts = locationStr.split(',').map((p) => p.trim());
+const US_STATES = new Set([
+  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
+  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
+  'VA','WA','WV','WI','WY','DC',
+]);
 
-  if (parts.length >= 2) {
-    // Strip postal code (e.g. "CA 92110" → "CA")
-    const state = parts[parts.length - 1].replace(/\s+\d{5}(-\d{4})?$/, '').trim();
-    const city = parts[parts.length - 2].trim();
-    return { city, state };
+export function extractCityState(locationStr: string): { city: string; state: string } {
+  const parts = locationStr.split(',').map((p) => p.trim()).filter(Boolean);
+
+  // Scan parts from right to left for a valid state abbreviation (optionally with zip)
+  for (let i = parts.length - 1; i >= 1; i--) {
+    const stateCode = parts[i].replace(/\s+\d{5}(-\d{4})?$/, '').trim().toUpperCase();
+    if (US_STATES.has(stateCode)) {
+      return { city: parts[i - 1], state: stateCode };
+    }
   }
 
   return { city: '', state: '' };
