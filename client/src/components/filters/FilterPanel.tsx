@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { X } from 'lucide-react';
 
@@ -73,18 +72,19 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
 
       {/* Skill levels */}
       <div className="flex items-center gap-1.5">
-        {SKILL_LEVELS.map((level) => (
-          <Badge
-            key={level}
-            variant={filters.skillLevels.includes(level) ? 'default' : 'outline'}
-            className={`cursor-pointer transition-all hover:scale-105 ${
-              filters.skillLevels.includes(level) ? getSkillLevelColor(level) : ''
-            }`}
-            onClick={() => handleSkillLevelToggle(level)}
-          >
-            {level}
-          </Badge>
-        ))}
+        {SKILL_LEVELS.map((level) => {
+          const selected = filters.skillLevels.includes(level);
+          return (
+            <span
+              key={level}
+              onClick={() => handleSkillLevelToggle(level)}
+              className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border cursor-pointer transition-all hover:scale-105"
+              style={selected ? getSkillBadgeStyle(level) : { color: 'var(--muted-foreground)', background: 'transparent', borderColor: 'var(--border)' }}
+            >
+              {level}
+            </span>
+          );
+        })}
       </div>
 
       {/* Divider */}
@@ -113,11 +113,13 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
   );
 }
 
-function getSkillLevelColor(level: string): string {
-  const numLevel = parseFloat(level.replace('5.0+', '5.0'));
-  if (numLevel <= 3.5) return 'bg-yellow-600 hover:bg-yellow-700';
-  if (numLevel <= 4.5) return 'bg-orange-600 hover:bg-orange-700';
-  return 'bg-red-600 hover:bg-red-700';
+function getSkillBadgeStyle(level: string): React.CSSProperties {
+  const num = parseFloat(level.replace('+', ''));
+  if (num <= 3.0) return { color: '#94a3b8', background: 'rgba(100,116,139,0.18)', borderColor: 'rgba(100,116,139,0.35)' };
+  if (num <= 3.5) return { color: '#60a5fa', background: 'rgba(96,165,250,0.18)', borderColor: 'rgba(96,165,250,0.35)' };
+  if (num <= 4.0) return { color: '#22d3ee', background: 'rgba(34,211,238,0.18)', borderColor: 'rgba(34,211,238,0.35)' };
+  if (num <= 4.5) return { color: '#34d399', background: 'rgba(52,211,153,0.18)', borderColor: 'rgba(52,211,153,0.35)' };
+  return { color: '#22c55e', background: 'rgba(34,197,94,0.20)', borderColor: 'rgba(34,197,94,0.40)' };
 }
 
 export { SKILL_LEVELS };
