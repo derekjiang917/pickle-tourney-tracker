@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PickleTrack — Design A: Field Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;500;600&family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ── CSS Variables ─────────────────────────────────────── */
+  :root {
+    --cream:       #f5f0e8;
+    --cream-dark:  #ede6d6;
+    --ink:         #2d2416;
+    --ink-light:   #5c4a30;
+    --forest:      #3d6b3f;
+    --forest-dark: #2a4d2c;
+    --forest-light:#5a8f5c;
+    --red:         #c44d2b;
+    --red-light:   #e85d33;
+    --gold:        #c8a84b;
+    --gold-light:  #e8c86b;
+    --gold-pale:   #f5e9c0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Mono', monospace;
+    background-color: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* ── Paper noise texture ──────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+  }
+
+  /* ── Section labels ───────────────────────────────────── */
+  .section-label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    opacity: 0.5;
+    padding: 8px 24px 4px;
+    border-top: 1px dashed rgba(45,36,22,0.2);
+    margin-top: 0;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     HEADER
+  ════════════════════════════════════════════════════════ */
+  .header {
+    background-color: var(--ink);
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    border-bottom: 3px solid var(--gold);
+  }
+
+  /* Ruled-line texture on header */
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 9px,
+      rgba(255,255,255,0.03) 9px,
+      rgba(255,255,255,0.03) 10px
+    );
+    pointer-events: none;
+  }
+
+  .header-logo {
+    font-family: 'Special Elite', cursive;
+    font-size: 26px;
+    color: var(--cream);
+    letter-spacing: 0.04em;
+    position: relative;
+  }
+
+  .header-logo .pickle {
+    color: var(--gold);
+  }
+
+  .header-logo .track {
+    color: var(--forest-light);
+  }
+
+  /* Small "stamp" badge under logo */
+  .header-logo::after {
+    content: 'TOURNAMENT TRACKER';
+    display: block;
+    font-family: 'Oswald', sans-serif;
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    opacity: 0.7;
+    margin-top: -4px;
+  }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  /* Logged out: sign-in link */
+  .signin-link {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--cream);
+    text-decoration: none;
+    opacity: 0.7;
+    border-bottom: 1px dashed rgba(245,240,232,0.4);
+    padding-bottom: 1px;
+    transition: opacity 0.2s;
+  }
+  .signin-link:hover { opacity: 1; }
+
+  /* Logged in: avatar + name */
+  .user-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--gold);
+    border: 2px solid var(--gold-light);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    /* Passport-photo style */
+    box-shadow: 0 0 0 1px rgba(200,168,75,0.4), 0 2px 6px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
+
+  .user-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .user-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--cream);
+    line-height: 1.2;
+  }
+
+  .signout-link {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    color: var(--gold);
+    text-decoration: none;
+    opacity: 0.65;
+    border-bottom: 1px solid rgba(200,168,75,0.3);
+    transition: opacity 0.2s;
+  }
+  .signout-link:hover { opacity: 1; }
+
+  /* ── Header separator ─────────────────────────────────── */
+  .header-section {
+    margin-bottom: 0;
+  }
+
+  .headers-wrapper {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 2px solid rgba(45,36,22,0.15);
+  }
+
+  .header-row {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     CORK BOARD / CARD AREA
+  ════════════════════════════════════════════════════════ */
+  .cork-board {
+    background-color: #8B6914;
+    background-image:
+      radial-gradient(ellipse at 20% 30%, rgba(139,105,20,0.0) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 70%, rgba(100,70,10,0.3) 0%, transparent 60%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='cork'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0.3'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23cork)' opacity='0.8' fill='%23a07820'/%3E%3C/svg%3E");
+    background-blend-mode: multiply, multiply, normal;
+    padding: 40px 32px;
+    position: relative;
+  }
+
+  /* Cork texture overlay */
+  .cork-board::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.4;
+    background-image:
+      repeating-radial-gradient(ellipse at 15% 25%, transparent 0, transparent 3px, rgba(160,120,30,0.15) 3px, rgba(160,120,30,0.15) 4px),
+      repeating-radial-gradient(ellipse at 65% 55%, transparent 0, transparent 5px, rgba(100,70,10,0.1) 5px, rgba(100,70,10,0.1) 6px),
+      repeating-radial-gradient(ellipse at 40% 80%, transparent 0, transparent 2px, rgba(180,140,40,0.1) 2px, rgba(180,140,40,0.1) 3px);
+    pointer-events: none;
+  }
+
+  .cork-board-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.6);
+    margin-bottom: 28px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 28px;
+    max-width: 1000px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Index Card ───────────────────────────────────────── */
+  .card {
+    background-color: var(--cream);
+    border-radius: 2px;
+    padding: 0;
+    position: relative;
+    box-shadow:
+      0 2px 0 rgba(0,0,0,0.15),
+      0 4px 12px rgba(0,0,0,0.3),
+      0 8px 24px rgba(0,0,0,0.2),
+      inset 0 0 0 1px rgba(45,36,22,0.08);
+    overflow: visible;
+    /* Slight tilt for "pinned" feel */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card:nth-child(1) { transform: rotate(-0.8deg); }
+  .card:nth-child(2) { transform: rotate(0.5deg); }
+  .card:nth-child(3) { transform: rotate(-1.2deg); }
+
+  .card:hover {
+    transform: rotate(0) translateY(-4px) !important;
+    box-shadow:
+      0 2px 0 rgba(0,0,0,0.15),
+      0 8px 24px rgba(0,0,0,0.4),
+      0 16px 40px rgba(0,0,0,0.25);
+  }
+
+  /* Push pin */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e8d080, #a07820 60%, #6b4f10);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.2);
+    z-index: 10;
+  }
+
+  /* Horizontal rule on index card (lined paper) */
+  .card-lines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: 2px;
+  }
+
+  .card-lines::after {
+    content: '';
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 24px,
+      rgba(180,160,120,0.25) 24px,
+      rgba(180,160,120,0.25) 25px
+    );
+  }
+
+  /* Red left margin line */
+  .card-margin {
+    position: absolute;
+    top: 0;
+    left: 48px;
+    bottom: 0;
+    width: 1px;
+    background: rgba(196,77,43,0.3);
+    pointer-events: none;
+  }
+
+  /* Card top color tab (index card category color) */
+  .card-tab {
+    height: 8px;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .card--normal .card-tab   { background-color: var(--forest); }
+  .card--registered .card-tab { background-color: var(--forest-dark); }
+  .card--conflict .card-tab  { background-color: var(--gold); }
+
+  .card-body {
+    padding: 18px 20px 20px;
+    position: relative;
+  }
+
+  .card-category {
+    font-family: 'Oswald', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    opacity: 0.6;
+    margin-bottom: 6px;
+  }
+
+  .card-name {
+    font-family: 'Special Elite', cursive;
+    font-size: 20px;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+
+  .card-meta-row {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-meta-row .icon {
+    font-size: 10px;
+    opacity: 0.6;
+    width: 14px;
+  }
+
+  .card-divider {
+    border: none;
+    border-top: 1px dashed rgba(45,36,22,0.2);
+    margin: 14px 0;
+  }
+
+  .card-skill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-light);
+    opacity: 0.7;
+    margin-bottom: 14px;
+  }
+
+  /* ── Register Buttons ─────────────────────────────────── */
+  .btn-register {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    background: transparent;
+    color: var(--forest-dark);
+    border: 2px solid var(--forest-dark);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-register:hover {
+    background-color: var(--forest-dark);
+    color: var(--cream);
+  }
+
+  .btn-register.registered {
+    opacity: 0.45;
+    cursor: default;
+    color: var(--forest);
+    border-color: var(--forest);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  .btn-register.registered:hover {
+    background: transparent;
+    color: var(--forest);
+  }
+
+  .btn-conflict {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    background: rgba(200,168,75,0.1);
+    color: #9a5a1a;
+    border: 2px solid #c8a84b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .btn-conflict:hover {
+    background: rgba(200,168,75,0.2);
+  }
+
+  /* ── Rubber Stamp Badges ──────────────────────────────── */
+  .stamp {
+    position: absolute;
+    top: 28px;
+    right: -8px;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  .stamp-inner {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    border: 3px solid currentColor;
+    border-radius: 3px;
+    display: inline-block;
+    line-height: 1;
+    position: relative;
+  }
+
+  /* Double-border stamp effect */
+  .stamp-inner::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border: 1px solid currentColor;
+    opacity: 0.4;
+    border-radius: 1px;
+  }
+
+  .stamp--registered {
+    transform: rotate(-12deg);
+  }
+  .stamp--registered .stamp-inner {
+    color: var(--forest);
+    opacity: 0.85;
+    text-shadow: 1px 1px 0 rgba(61,107,63,0.3);
+    /* Ink bleed effect */
+    filter: blur(0.3px);
+  }
+
+  .stamp--conflict {
+    transform: rotate(10deg);
+    top: 24px;
+    right: -4px;
+  }
+  .stamp--conflict .stamp-inner {
+    color: var(--red);
+    opacity: 0.9;
+    filter: blur(0.3px);
+  }
+
+  /* ── Show Popup Button ────────────────────────────────── */
+  .show-popup-area {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .btn-show-popup {
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 10px 24px;
+    background: var(--cream);
+    color: var(--ink);
+    border: 2px dashed var(--ink-light);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+  .btn-show-popup:hover { opacity: 1; }
+
+  /* ═══════════════════════════════════════════════════════
+     CONFIRMATION POPUP (MODAL)
+  ════════════════════════════════════════════════════════ */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(45,36,22,0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  .modal-backdrop.hidden {
+    display: none;
+  }
+
+  .modal-backdrop.dismissing {
+    opacity: 0;
+  }
+
+  .modal {
+    width: 90%;
+    max-width: 440px;
+    background: var(--cream);
+    position: relative;
+    box-shadow:
+      0 4px 0 rgba(0,0,0,0.2),
+      0 12px 40px rgba(0,0,0,0.5);
+    transform: scale(1);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: 2px;
+    overflow: visible;
+  }
+
+  .modal.dismissing {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+
+  /* Clipboard top edge / clip detail */
+  .modal-clip {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 28px;
+    background: #8a7a60;
+    border-radius: 4px 4px 0 0;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.3);
+    z-index: 5;
+  }
+
+  .modal-clip::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 12px;
+    background: var(--ink);
+    border-radius: 2px;
+    opacity: 0.5;
+  }
+
+  /* Torn paper top edge */
+  .modal-torn-top {
+    height: 18px;
+    background: var(--cream-dark);
+    /* SVG torn edge using clip-path */
+    clip-path: polygon(
+      0% 100%, 0% 40%, 2% 70%, 4% 30%, 6% 60%, 8% 20%, 10% 55%,
+      12% 25%, 14% 65%, 16% 35%, 18% 70%, 20% 30%, 22% 60%, 24% 15%,
+      26% 50%, 28% 25%, 30% 60%, 32% 30%, 34% 65%, 36% 20%, 38% 55%,
+      40% 30%, 42% 70%, 44% 25%, 46% 60%, 48% 15%, 50% 50%,
+      52% 25%, 54% 65%, 56% 30%, 58% 55%, 60% 20%, 62% 60%, 64% 30%,
+      66% 70%, 68% 25%, 70% 55%, 72% 30%, 74% 65%, 76% 20%, 78% 50%,
+      80% 25%, 82% 60%, 84% 30%, 86% 65%, 88% 20%, 90% 55%, 92% 30%,
+      94% 70%, 96% 25%, 98% 60%, 100% 30%, 100% 100%
+    );
+    margin-bottom: 0;
+  }
+
+  .modal-body {
+    padding: 20px 28px 28px;
+    position: relative;
+  }
+
+  /* Lined paper in modal */
+  .modal-body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(180,160,120,0.18) 28px,
+      rgba(180,160,120,0.18) 29px
+    );
+    pointer-events: none;
+  }
+
+  .modal-eyebrow {
+    font-family: 'Oswald', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    opacity: 0.5;
+    margin-bottom: 6px;
+    position: relative;
+  }
+
+  .modal-tourney-name {
+    font-family: 'Special Elite', cursive;
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: 4px;
+    position: relative;
+  }
+
+  .modal-dates {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-light);
+    opacity: 0.75;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .modal-divider {
+    border: none;
+    border-top: 2px dashed rgba(45,36,22,0.15);
+    margin: 16px 0;
+    position: relative;
+  }
+
+  .modal-question {
+    font-family: 'Special Elite', cursive;
+    font-size: 17px;
+    color: var(--ink);
+    line-height: 1.4;
+    margin-bottom: 22px;
+    position: relative;
+  }
+
+  /* Checkbox style buttons */
+  .modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+  }
+
+  .modal-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 2px solid currentColor;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    width: 100%;
+  }
+
+  .modal-btn-checkbox {
+    width: 22px;
+    height: 22px;
+    border: 2px solid currentColor;
+    border-radius: 2px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.15s ease;
+  }
+
+  .modal-btn-text {
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .modal-btn--yes {
+    color: var(--forest-dark);
+  }
+  .modal-btn--yes:hover {
+    background-color: var(--forest-dark);
+    color: var(--cream);
+  }
+  .modal-btn--yes:hover .modal-btn-checkbox {
+    background-color: rgba(245,240,232,0.3);
+    border-color: var(--cream);
+  }
+
+  .modal-btn--no {
+    color: var(--red);
+  }
+  .modal-btn--no:hover {
+    background-color: var(--red);
+    color: var(--cream);
+  }
+  .modal-btn--no:hover .modal-btn-checkbox {
+    background-color: rgba(245,240,232,0.3);
+    border-color: var(--cream);
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     CONFLICT DETAIL (Warning Strip)
+  ════════════════════════════════════════════════════════ */
+  .conflict-section {
+    background-color: var(--cream-dark);
+    padding: 40px 32px;
+    border-top: 2px solid rgba(45,36,22,0.12);
+  }
+
+  .conflict-section-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    opacity: 0.5;
+    margin-bottom: 24px;
+  }
+
+  .conflict-strip {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    background: var(--gold-pale);
+    border-left: 5px solid var(--red);
+    /* Torn bottom edge */
+    clip-path: polygon(
+      0% 0%, 100% 0%,
+      100% 85%, 98% 100%, 96% 88%, 94% 100%, 92% 87%, 90% 100%,
+      88% 89%, 86% 100%, 84% 87%, 82% 100%, 80% 88%, 78% 100%,
+      76% 86%, 74% 100%, 72% 89%, 70% 100%, 68% 87%, 66% 100%,
+      64% 88%, 62% 100%, 60% 86%, 58% 100%, 56% 89%, 54% 100%,
+      52% 87%, 50% 100%, 48% 88%, 46% 100%, 44% 86%, 42% 100%,
+      40% 89%, 38% 100%, 36% 87%, 34% 100%, 32% 88%, 30% 100%,
+      28% 86%, 26% 100%, 24% 89%, 22% 100%, 20% 87%, 18% 100%,
+      16% 88%, 14% 100%, 12% 86%, 10% 100%, 8% 89%, 6% 100%,
+      4% 87%, 2% 100%, 0% 88%
+    );
+    padding: 20px 24px 32px;
+  }
+
+  .conflict-strip-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .conflict-stamp-small {
+    font-family: 'Oswald', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--red);
+    border: 2px solid var(--red);
+    padding: 2px 8px;
+    display: inline-block;
+    line-height: 1.4;
+    opacity: 0.9;
+    transform: rotate(-2deg);
+    position: relative;
+  }
+
+  .conflict-strip-title {
+    font-family: 'Special Elite', cursive;
+    font-size: 20px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+
+  .conflict-strip-body {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-light);
+    line-height: 1.7;
+  }
+
+  .conflict-note {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-light);
+    opacity: 0.7;
+    font-style: italic;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(45,36,22,0.2);
+  }
+
+  /* ── Misc spacers ─────────────────────────────────────── */
+  .section-divider {
+    height: 2px;
+    background: rgba(45,36,22,0.12);
+  }
+
+  /* Annotation label on page */
+  .page-annotation {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-light);
+    opacity: 0.45;
+    text-align: center;
+    padding: 10px 0 6px;
+    letter-spacing: 0.05em;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 1: LOGGED-OUT HEADER
+════════════════════════════════════════════════════════ -->
+<div class="page-annotation">▸ Header state: logged out</div>
+<div class="headers-wrapper">
+  <header class="header">
+    <div class="header-logo">
+      <span class="pickle">Pickle</span><span class="track">Track</span>
+    </div>
+    <nav class="header-nav">
+      <a href="#" class="signin-link">Sign in with Google</a>
+    </nav>
+  </header>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 2: LOGGED-IN HEADER
+════════════════════════════════════════════════════════ -->
+<div class="page-annotation">▸ Header state: logged in</div>
+<div class="headers-wrapper">
+  <header class="header">
+    <div class="header-logo">
+      <span class="pickle">Pickle</span><span class="track">Track</span>
+    </div>
+    <nav class="header-nav">
+      <div class="user-pill">
+        <div class="user-avatar">AK</div>
+        <div class="user-info">
+          <span class="user-name">Alex Kowalski</span>
+          <a href="#" class="signout-link">sign out</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 3: TOURNAMENT CARDS (CORK BOARD)
+════════════════════════════════════════════════════════ -->
+<div class="cork-board">
+  <div class="cork-board-title">— Upcoming Tournaments —</div>
+
+  <div class="cards-grid">
+
+    <!-- Card 1: Normal -->
+    <div class="card card--normal">
+      <div class="card-lines"></div>
+      <div class="card-margin"></div>
+      <div class="card-tab"></div>
+      <div class="card-body">
+        <div class="card-category">Open Division</div>
+        <div class="card-name">Spring Open 2026</div>
+        <div class="card-meta">
+          <div class="card-meta-row">
+            <span class="icon">◷</span>
+            <span>Apr 12–14, 2026</span>
+          </div>
+          <div class="card-meta-row">
+            <span class="icon">⌖</span>
+            <span>Portland, OR</span>
+          </div>
+        </div>
+        <hr class="card-divider">
+        <div class="card-skill">Skill: 3.5 / 4.0 / 4.5</div>
+        <button class="btn-register" onclick="showModal()">REGISTER →</button>
+      </div>
+    </div>
+
+    <!-- Card 2: Registered -->
+    <div class="card card--registered">
+      <div class="card-lines"></div>
+      <div class="card-margin"></div>
+      <div class="card-tab"></div>
+      <div class="stamp stamp--registered">
+        <div class="stamp-inner">REGISTERED ✓</div>
+      </div>
+      <div class="card-body">
+        <div class="card-category">Open Division</div>
+        <div class="card-name">Pacific Coast Classic</div>
+        <div class="card-meta">
+          <div class="card-meta-row">
+            <span class="icon">◷</span>
+            <span>Apr 18–20, 2026</span>
+          </div>
+          <div class="card-meta-row">
+            <span class="icon">⌖</span>
+            <span>Seattle, WA</span>
+          </div>
+        </div>
+        <hr class="card-divider">
+        <div class="card-skill">Skill: 4.0 / 4.5 / 5.0</div>
+        <button class="btn-register registered" disabled>✓ REGISTERED</button>
+      </div>
+    </div>
+
+    <!-- Card 3: Conflict -->
+    <div class="card card--conflict">
+      <div class="card-lines"></div>
+      <div class="card-margin"></div>
+      <div class="card-tab"></div>
+      <div class="stamp stamp--conflict">
+        <div class="stamp-inner">⚠ CONFLICT</div>
+      </div>
+      <div class="card-body">
+        <div class="card-category">Open Division</div>
+        <div class="card-name">Northwest Invitational</div>
+        <div class="card-meta">
+          <div class="card-meta-row">
+            <span class="icon">◷</span>
+            <span>Apr 13–15, 2026</span>
+          </div>
+          <div class="card-meta-row">
+            <span class="icon">⌖</span>
+            <span>Tacoma, WA</span>
+          </div>
+        </div>
+        <hr class="card-divider">
+        <div class="card-skill">Skill: 3.5 / 4.0 / 4.5</div>
+        <button class="btn-conflict">⚠ Schedule Conflict</button>
+      </div>
+    </div>
+
+  </div><!-- /cards-grid -->
+
+  <!-- Show Popup button -->
+  <div class="show-popup-area">
+    <button class="btn-show-popup" onclick="showModal()">[ Show Confirmation Popup ]</button>
+  </div>
+
+</div><!-- /cork-board -->
+
+<div class="section-divider"></div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 5: CONFLICT DETAIL (Warning Strip)
+════════════════════════════════════════════════════════ -->
+<div class="conflict-section">
+  <div class="conflict-section-title">— Detail View · Schedule Conflict Banner —</div>
+
+  <div class="conflict-strip">
+    <div class="conflict-strip-header">
+      <span class="conflict-stamp-small">⚠ Alert</span>
+    </div>
+    <div class="conflict-strip-title">⚠ Schedule Conflict</div>
+    <div class="conflict-strip-body">
+      This tournament overlaps with a registered event:<br>
+      <strong>Pacific Coast Classic</strong> — Apr 18–20, 2026 · Seattle, WA<br>
+    </div>
+    <div class="conflict-note">
+      // Dates overlap: Spring Open ends Apr 14, Northwest Invitational begins Apr 13.<br>
+      // You may still register, but you cannot attend both.
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     SECTION 4: MODAL POPUP (Confirmation)
+════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop hidden" id="modalBackdrop" onclick="handleBackdropClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-clip"></div>
+    <div class="modal-torn-top"></div>
+    <div class="modal-body">
+      <div class="modal-eyebrow">Tournament Registration</div>
+      <div class="modal-tourney-name">Spring Open 2026</div>
+      <div class="modal-dates">◷ Apr 12–14, 2026 · ⌖ Portland, OR</div>
+      <hr class="modal-divider">
+      <div class="modal-question">Did you complete your<br>registration?</div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn--yes" onclick="dismissModal('yes')">
+          <div class="modal-btn-checkbox">✓</div>
+          <div class="modal-btn-text">Yes, I registered</div>
+        </button>
+        <button class="modal-btn modal-btn--no" onclick="dismissModal('no')">
+          <div class="modal-btn-checkbox">✗</div>
+          <div class="modal-btn-text">No, remove it</div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const backdrop = document.getElementById('modalBackdrop');
+  const modal    = document.getElementById('modal');
+
+  function showModal() {
+    backdrop.classList.remove('hidden', 'dismissing');
+    modal.classList.remove('dismissing');
+    // Force reflow then animate in
+    backdrop.style.opacity = '0';
+    modal.style.transform = 'scale(0.85)';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        backdrop.style.transition = 'opacity 0.25s ease';
+        modal.style.transition = 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease';
+        backdrop.style.opacity = '1';
+        modal.style.transform = 'scale(1)';
+      });
+    });
+  }
+
+  function dismissModal(choice) {
+    backdrop.style.transition = 'opacity 0.25s ease';
+    modal.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+    backdrop.style.opacity = '0';
+    modal.style.transform = 'scale(0.88)';
+    modal.style.opacity = '0';
+    setTimeout(() => {
+      backdrop.classList.add('hidden');
+      modal.style.transform = '';
+      modal.style.opacity = '';
+    }, 280);
+  }
+
+  function handleBackdropClick(e) {
+    if (e.target === backdrop) dismissModal('backdrop');
+  }
+
+  // Show modal on initial load for preview purposes
+  window.addEventListener('load', () => {
+    setTimeout(showModal, 400);
+  });
+</script>
+</body>
+</html>

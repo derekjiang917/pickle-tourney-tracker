@@ -16,7 +16,7 @@ The existing app aesthetic: dark background, DM Sans font, green primary (`#22c5
 
 ## Tasks
 
-- [ ] **Create Design A: "Field Notes" aesthetic — `signup-design-a.html`**
+- [x] **Create Design A: "Field Notes" aesthetic — `signup-design-a.html`**
 
   Save to `/home/coole/pickle-tourney-tracker/signup-design-a.html`.
 
