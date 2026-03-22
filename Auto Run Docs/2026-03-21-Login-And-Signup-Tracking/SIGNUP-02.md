@@ -6,7 +6,7 @@ This phase adds the server-side signup tracking service and routes. It handles r
 
 ## Tasks
 
-- [ ] **Create signup service: `server/src/services/signupService.ts`**
+- [x] **Create signup service: `server/src/services/signupService.ts`**
 
   Create `/home/coole/pickle-tourney-tracker/server/src/services/signupService.ts`:
 
@@ -159,7 +159,7 @@ This phase adds the server-side signup tracking service and routes. It handles r
   }
   ```
 
-- [ ] **Create signup routes: `server/src/routes/signups.ts`**
+- [x] **Create signup routes: `server/src/routes/signups.ts`**
 
   Create `/home/coole/pickle-tourney-tracker/server/src/routes/signups.ts`:
 
@@ -279,7 +279,7 @@ This phase adds the server-side signup tracking service and routes. It handles r
   export default router;
   ```
 
-- [ ] **Register signup routes in Express app: `server/src/index.ts`**
+- [x] **Register signup routes in Express app: `server/src/index.ts`**
 
   Read `/home/coole/pickle-tourney-tracker/server/src/index.ts`.
 

@@ -7,6 +7,7 @@ import passport from 'passport';
 import tournamentRoutes from './routes/tournaments.js';
 import scrapeRoutes from './routes/scrape.js';
 import authRoutes from './routes/auth.js';
+import signupRoutes from './routes/signups.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { cacheMiddleware } from './middleware/cache.js';
 import { requestLogger } from './middleware/requestLogger.js';
@@ -50,6 +51,7 @@ app.get('/health', async (_req, res) => {
 app.use('/api/tournaments', cacheMiddleware, tournamentRoutes);
 app.use('/api/scrape', scrapeRoutes);
 app.use('/auth', authRoutes);
+app.use('/api/signups', signupRoutes);
 
 app.use(errorHandler);
 
