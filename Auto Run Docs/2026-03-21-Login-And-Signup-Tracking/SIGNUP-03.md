@@ -58,7 +58,7 @@ The existing app aesthetic: dark background, DM Sans font, green primary (`#22c5
 
   Include CSS animations: pulsing glow on registered badge, subtle scan-line effect on cards, flicker on conflict warning. Make it interactive — popup buttons dismiss with animation.
 
-- [ ] **Create Design C: "Clean App" aesthetic — `signup-design-c.html`**
+- [x] **Create Design C: "Clean App" aesthetic — `signup-design-c.html`**
 
   Save to `/home/coole/pickle-tourney-tracker/signup-design-c.html`.
 

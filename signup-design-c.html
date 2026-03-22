@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design C — Clean App · PickleTourney</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Nunito+Sans:ital,opsz,wght@0,6..12,300;0,6..12,400;0,6..12,500;0,6..12,600;0,6..12,700;1,6..12,400&display=swap" rel="stylesheet">
+<style>
+/* ─── Reset ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ─── Design Tokens ──────────────────────────────────── */
+:root {
+  --bg:           #0f1923;
+  --bg2:          #111d2b;
+  --card:         #1a2840;
+  --card-border:  rgba(255,255,255,0.07);
+  --green:        #22c55e;
+  --green-dim:    rgba(34,197,94,0.13);
+  --green-glow:   rgba(34,197,94,0.22);
+  --amber:        #f59e0b;
+  --amber-dim:    rgba(245,158,11,0.12);
+  --amber-glow:   rgba(245,158,11,0.20);
+  --danger:       #ef4444;
+  --danger-dim:   rgba(239,68,68,0.10);
+  --text:         #ffffff;
+  --text-muted:   #94a3b8;
+  --text-dim:     #4a6080;
+  --glass-bg:     rgba(26,40,64,0.72);
+  --glass-border: rgba(255,255,255,0.09);
+  --shadow-sm:    0 2px 8px rgba(0,0,0,0.30);
+  --shadow-md:    0 8px 24px rgba(0,0,0,0.40);
+  --shadow-lg:    0 20px 60px rgba(0,0,0,0.55);
+  --radius-card:  16px;
+  --radius-btn:   10px;
+  --radius-pill:  999px;
+  --spring:       cubic-bezier(0.34,1.56,0.64,1);
+  --ease:         cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ─── Base ───────────────────────────────────────────── */
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Nunito Sans', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  padding: 0 0 120px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Ambient background glow */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 5% -10%, rgba(34,197,94,0.14) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 45% at 95% 110%, rgba(34,197,94,0.09) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 50% 50%, rgba(15,25,35,0) 0%, transparent 100%);
+}
+
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* ─── Spec Labels ────────────────────────────────────── */
+.spec-section {
+  padding-top: 72px;
+}
+.spec-label {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.spec-label-text {
+  font-family: 'Sora', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.spec-label-num {
+  font-family: 'Sora', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  opacity: 0.7;
+  margin-right: 2px;
+}
+.spec-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--card-border) 0%, transparent 100%);
+}
+
+/* ─── Page Header ────────────────────────────────────── */
+.page-hero {
+  padding: 56px 0 8px;
+  text-align: center;
+}
+.page-hero h1 {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 12px;
+  opacity: 0.8;
+}
+.page-hero p {
+  font-family: 'Sora', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+.page-hero small {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ─── APP HEADER ─────────────────────────────────────── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 62px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-sm);
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.app-logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--green) 0%, #16a34a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(34,197,94,0.35);
+}
+.app-logo-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.app-logo-name span {
+  color: var(--green);
+}
+
+/* Google sign-in pill */
+.btn-google {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 18px 8px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+  white-space: nowrap;
+}
+.btn-google:hover {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.22);
+  transform: translateY(-1px);
+}
+.btn-google:active { transform: translateY(0); }
+
+/* Google G logo SVG */
+.google-g {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Logged-in header user area */
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+}
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--green) 0%, #16a34a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Sora', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 0 2px rgba(34,197,94,0.30);
+  flex-shrink: 0;
+}
+.user-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  font-family: 'Nunito Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+.user-btn:hover { background: rgba(255,255,255,0.07); }
+.user-btn svg { opacity: 0.5; flex-shrink: 0; transition: transform 0.2s var(--ease); }
+.user-btn.open svg { transform: rotate(180deg); }
+
+/* User dropdown */
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: #1e3050;
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  min-width: 180px;
+  padding: 6px;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.18s var(--ease), transform 0.22s var(--spring);
+  z-index: 100;
+}
+.user-dropdown.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.dropdown-item:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+.dropdown-item.danger:hover { background: var(--danger-dim); color: var(--danger); }
+.dropdown-sep {
+  height: 1px;
+  background: var(--card-border);
+  margin: 4px 6px;
+}
+
+/* ─── TOURNAMENT CARDS ───────────────────────────────── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+@media (max-width: 720px) {
+  .card-grid { grid-template-columns: 1fr; }
+}
+
+.t-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: transform 0.22s var(--spring), box-shadow 0.22s var(--ease);
+  position: relative;
+}
+.t-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+.t-card.registered {
+  border-color: rgba(34,197,94,0.25);
+  box-shadow: 0 0 0 1px rgba(34,197,94,0.15), var(--shadow-sm);
+}
+.t-card.conflict {
+  border-color: rgba(245,158,11,0.30);
+  box-shadow: 0 0 0 1px rgba(245,158,11,0.18), var(--shadow-sm);
+}
+
+/* Card image / banner area */
+.card-img {
+  height: 180px;
+  position: relative;
+  overflow: hidden;
+}
+.card-img-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  padding: 14px;
+}
+
+.card-img-1 {
+  background: linear-gradient(145deg, #0d2a1a 0%, #163528 40%, #0f2236 100%);
+}
+.card-img-1::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 40%, rgba(34,197,94,0.18) 0%, transparent 60%);
+}
+
+.card-img-2 {
+  background: linear-gradient(145deg, #0f2236 0%, #122040 40%, #0d1e1c 100%);
+}
+.card-img-2::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 70% 30%, rgba(34,197,94,0.14) 0%, transparent 55%);
+}
+
+.card-img-3 {
+  background: linear-gradient(145deg, #211808 0%, #2a1f0e 40%, #1a1a0d 100%);
+}
+.card-img-3::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 40% 60%, rgba(245,158,11,0.14) 0%, transparent 55%);
+}
+
+/* Corner status badge */
+.corner-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 4px 8px;
+  border-radius: var(--radius-pill);
+  font-family: 'Sora', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.corner-badge.green {
+  background: rgba(34,197,94,0.88);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(34,197,94,0.45);
+}
+.corner-badge.amber {
+  background: rgba(245,158,11,0.88);
+  color: #0f1923;
+  box-shadow: 0 2px 12px rgba(245,158,11,0.40);
+}
+
+/* Card body */
+.card-body {
+  padding: 18px 18px 20px;
+}
+.card-source {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.card-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.card-meta svg { flex-shrink: 0; opacity: 0.6; }
+.card-meta-sep { color: var(--text-dim); }
+
+/* Skill badges */
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 16px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border: 1px solid;
+}
+.b-slate  { background: rgba(100,116,139,0.12); color: #94a3b8; border-color: rgba(100,116,139,0.25); }
+.b-blue   { background: rgba(96,165,250,0.10);  color: #60a5fa; border-color: rgba(96,165,250,0.25); }
+.b-cyan   { background: rgba(34,211,238,0.10);  color: #22d3ee; border-color: rgba(34,211,238,0.25); }
+.b-mint   { background: rgba(52,211,153,0.10);  color: #34d399; border-color: rgba(52,211,153,0.25); }
+.b-green  { background: rgba(34,197,94,0.12);   color: #22c55e; border-color: rgba(34,197,94,0.28); }
+
+/* Register buttons */
+.btn-register {
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: var(--radius-btn);
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.2s var(--ease);
+  border: none;
+  letter-spacing: 0.01em;
+}
+
+.btn-register.primary {
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(34,197,94,0.30);
+}
+.btn-register.primary:hover {
+  background: #28d968;
+  box-shadow: 0 6px 22px rgba(34,197,94,0.45);
+  transform: translateY(-1px);
+}
+.btn-register.primary:active { transform: translateY(0); }
+
+.btn-register.done {
+  background: rgba(34,197,94,0.15);
+  color: var(--green);
+  border: 1px solid rgba(34,197,94,0.30);
+  cursor: default;
+  opacity: 0.85;
+}
+
+.btn-register.conflict-btn {
+  background: transparent;
+  color: var(--amber);
+  border: 1.5px solid rgba(245,158,11,0.45);
+  position: relative;
+}
+.btn-register.conflict-btn:hover {
+  background: var(--amber-dim);
+  border-color: rgba(245,158,11,0.65);
+}
+
+/* Conflict tooltip */
+.tooltip-wrap {
+  position: relative;
+}
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #1e3050;
+  border: 1px solid rgba(245,158,11,0.35);
+  border-radius: 9px;
+  padding: 9px 13px;
+  font-size: 12px;
+  color: var(--amber);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s var(--ease), transform 0.18s var(--ease);
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+}
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(245,158,11,0.35);
+}
+.tooltip-wrap:hover .tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ─── BOTTOM SHEET ───────────────────────────────────── */
+.bottom-sheet-preview {
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px 24px 16px 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.sheet-handle-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+  background: var(--card);
+}
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.14);
+}
+
+.sheet-banner {
+  height: 120px;
+  background: linear-gradient(145deg, #0f2a1c 0%, #163528 50%, #0f2236 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 14px;
+}
+.sheet-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 50%, rgba(34,197,94,0.20) 0%, transparent 60%);
+}
+.sheet-banner-label {
+  position: relative;
+  z-index: 1;
+  font-family: 'Sora', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+}
+
+.sheet-body {
+  padding: 20px 24px 24px;
+}
+.sheet-tourney-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.sheet-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+.sheet-divider {
+  height: 1px;
+  background: var(--card-border);
+  margin-bottom: 18px;
+}
+.sheet-question {
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+.sheet-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.btn-yes {
+  padding: 12px;
+  border-radius: var(--radius-btn);
+  background: var(--green);
+  color: #fff;
+  font-family: 'Sora', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s var(--ease);
+  box-shadow: 0 4px 14px rgba(34,197,94,0.28);
+}
+.btn-yes:hover {
+  background: #28d968;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(34,197,94,0.40);
+}
+.btn-no {
+  padding: 12px;
+  border-radius: var(--radius-btn);
+  background: transparent;
+  color: var(--danger);
+  font-family: 'Sora', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  border: 1.5px solid rgba(239,68,68,0.40);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s var(--ease);
+}
+.btn-no:hover {
+  background: var(--danger-dim);
+  border-color: rgba(239,68,68,0.65);
+}
+
+/* ─── MODAL ──────────────────────────────────────────── */
+.modal-preview {
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.09);
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.modal-close:hover { background: rgba(255,255,255,0.15); color: var(--text); }
+
+/* ─── CONFLICT CALLOUT ───────────────────────────────── */
+.conflict-modal-wrap {
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.conflict-modal-top {
+  height: 100px;
+  background: linear-gradient(145deg, #1a1208 0%, #221a0d 50%, #1a1200 100%);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  padding: 14px 20px;
+}
+.conflict-modal-top::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 60%, rgba(245,158,11,0.15) 0%, transparent 60%);
+}
+.conflict-modal-top-label {
+  position: relative;
+  z-index: 1;
+  font-family: 'Sora', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(245,158,11,0.6);
+}
+.conflict-modal-body {
+  padding: 20px 22px 26px;
+}
+.conflict-modal-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+.conflict-modal-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+.conflict-modal-divider {
+  height: 1px;
+  background: var(--card-border);
+  margin-bottom: 18px;
+}
+
+/* Amber callout */
+.callout-amber {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(245,158,11,0.10);
+  border-left: 4px solid var(--amber);
+  border-radius: 0 10px 10px 0;
+  margin-bottom: 20px;
+}
+.callout-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--amber);
+}
+.callout-text {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.callout-text strong {
+  color: var(--amber);
+  font-weight: 700;
+  display: block;
+  margin-bottom: 3px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+.callout-link {
+  color: var(--amber);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(245,158,11,0.35);
+  transition: border-color 0.15s;
+  margin-top: 5px;
+  display: inline-block;
+}
+.callout-link:hover { border-color: var(--amber); }
+
+.conflict-register-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-btn);
+  background: transparent;
+  color: var(--amber);
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1.5px solid rgba(245,158,11,0.40);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.2s var(--ease);
+}
+.conflict-register-btn:hover {
+  background: var(--amber-dim);
+  border-color: rgba(245,158,11,0.65);
+}
+
+/* ─── LIVE MODAL OVERLAY ─────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(5,10,18,0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease);
+}
+.modal-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal-live {
+  background: var(--card);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  transform: scale(0.94) translateY(10px);
+  transition: transform 0.30s var(--spring);
+}
+.modal-overlay.show .modal-live {
+  transform: scale(1) translateY(0);
+}
+
+/* ─── SECTION DIVIDER ROW ────────────────────────────── */
+.section-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+@media (max-width: 640px) {
+  .section-pair { grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ── Page Hero ────────────────────────── -->
+  <div class="page-hero">
+    <h1>Design C — Clean App</h1>
+    <p>Polished Modern Sports Tracker</p>
+    <small>Sora + Nunito Sans &nbsp;·&nbsp; Navy/Slate + Green Primary</small>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       § 1  HEADER — LOGGED OUT
+  ════════════════════════════════════════ -->
+  <div class="spec-section">
+    <div class="spec-label">
+      <span class="spec-label-num">01</span>
+      <span class="spec-label-text">App Header — Logged Out</span>
+      <div class="spec-line"></div>
+    </div>
+
+    <header class="app-header">
+      <a href="#" class="app-logo">
+        <div class="app-logo-icon">
+          <!-- pickle paddle icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="5"/>
+            <line x1="12" y1="13" x2="12" y2="22"/>
+            <line x1="9" y1="20" x2="15" y2="20"/>
+          </svg>
+        </div>
+        <span class="app-logo-name">Pickle<span>Tourney</span></span>
+      </a>
+
+      <button class="btn-google" id="signInBtn">
+        <svg class="google-g" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Sign in with Google
+      </button>
+    </header>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       § 2  HEADER — LOGGED IN
+  ════════════════════════════════════════ -->
+  <div class="spec-section">
+    <div class="spec-label">
+      <span class="spec-label-num">02</span>
+      <span class="spec-label-text">App Header — Logged In</span>
+      <div class="spec-line"></div>
+    </div>
+
+    <header class="app-header">
+      <a href="#" class="app-logo">
+        <div class="app-logo-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="5"/>
+            <line x1="12" y1="13" x2="12" y2="22"/>
+            <line x1="9" y1="20" x2="15" y2="20"/>
+          </svg>
+        </div>
+        <span class="app-logo-name">Pickle<span>Tourney</span></span>
+      </a>
+
+      <div class="header-user" id="userMenuWrap">
+        <div class="avatar">JD</div>
+        <button class="user-btn" id="userMenuBtn">
+          Jordan Davis
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="user-dropdown" id="userDropdown">
+          <div class="dropdown-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+            Profile
+          </div>
+          <div class="dropdown-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            My Registrations
+          </div>
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-item danger">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       § 3  TOURNAMENT CARDS
+  ════════════════════════════════════════ -->
+  <div class="spec-section">
+    <div class="spec-label">
+      <span class="spec-label-num">03</span>
+      <span class="spec-label-text">Tournament Cards — Normal · Registered · Conflict</span>
+      <div class="spec-line"></div>
+    </div>
+
+    <div class="card-grid">
+
+      <!-- Card 1: Normal -->
+      <div class="t-card">
+        <div class="card-img card-img-1">
+          <div class="card-img-inner">
+            <span style="font-size:10px;color:rgba(255,255,255,0.2);font-family:'Sora',sans-serif;letter-spacing:.1em;text-transform:uppercase;position:relative;z-index:1;">Tournament Photo</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-source">maincourt.com</div>
+          <div class="card-name">Southwest Classic Open</div>
+          <div class="card-meta">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Apr 5–7, 2026
+            <span class="card-meta-sep">·</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Scottsdale, AZ
+          </div>
+          <div class="badges">
+            <span class="badge b-blue">3.5</span>
+            <span class="badge b-cyan">4.0</span>
+            <span class="badge b-mint">4.5</span>
+            <span class="badge b-green">5.0</span>
+          </div>
+          <button class="btn-register primary" id="openModalBtn">
+            Register
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 2: Registered -->
+      <div class="t-card registered">
+        <div class="card-img card-img-2">
+          <div class="card-img-inner" style="position:relative;z-index:1;">
+            <span style="font-size:10px;color:rgba(255,255,255,0.2);font-family:'Sora',sans-serif;letter-spacing:.1em;text-transform:uppercase;">Tournament Photo</span>
+          </div>
+          <div class="corner-badge green">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Registered
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-source">pickleballtournaments.com</div>
+          <div class="card-name">Mountain West Invitational</div>
+          <div class="card-meta">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Apr 19–21, 2026
+            <span class="card-meta-sep">·</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Denver, CO
+          </div>
+          <div class="badges">
+            <span class="badge b-cyan">4.0</span>
+            <span class="badge b-mint">4.5</span>
+          </div>
+          <button class="btn-register done" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Registered
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 3: Conflict -->
+      <div class="t-card conflict">
+        <div class="card-img card-img-3">
+          <div class="card-img-inner" style="position:relative;z-index:1;">
+            <span style="font-size:10px;color:rgba(255,255,255,0.2);font-family:'Sora',sans-serif;letter-spacing:.1em;text-transform:uppercase;">Tournament Photo</span>
+          </div>
+          <div class="corner-badge amber">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Conflict
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="card-source">maincourt.com</div>
+          <div class="card-name">Desert Open Championship</div>
+          <div class="card-meta">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Apr 12–14, 2026
+            <span class="card-meta-sep">·</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Phoenix, AZ
+          </div>
+          <div class="badges">
+            <span class="badge b-slate">3.0</span>
+            <span class="badge b-blue">3.5</span>
+            <span class="badge b-cyan">4.0</span>
+            <span class="badge b-green">5.0</span>
+          </div>
+          <div class="tooltip-wrap">
+            <button class="btn-register conflict-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Register (Conflict)
+            </button>
+            <div class="tooltip">⚠ Date overlap with Mountain West (Apr 19–21)</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       § 4 + 5  POPUPS SIDE BY SIDE
+  ════════════════════════════════════════ -->
+  <div class="spec-section">
+    <div class="spec-label">
+      <span class="spec-label-num">04–05</span>
+      <span class="spec-label-text">Confirmation Popup — Bottom Sheet (mobile) &amp; Modal (desktop)</span>
+      <div class="spec-line"></div>
+    </div>
+
+    <div class="section-pair">
+
+      <!-- § 4 — Bottom Sheet -->
+      <div>
+        <p style="font-size:11px;color:var(--text-dim);font-family:'Sora',sans-serif;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;">Mobile — Bottom Sheet</p>
+        <div class="bottom-sheet-preview">
+          <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+          <div class="sheet-banner">
+            <span class="sheet-banner-label">Tournament Photo</span>
+          </div>
+          <div class="sheet-body">
+            <div class="sheet-tourney-name">Southwest Classic</div>
+            <div class="sheet-meta">Apr 5–7, 2026 · Scottsdale, AZ</div>
+            <div class="sheet-divider"></div>
+            <div class="sheet-question">Did you complete your registration?</div>
+            <div class="sheet-actions">
+              <button class="btn-yes" onclick="this.closest('.bottom-sheet-preview').style.opacity='0.4'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Yes, I registered
+              </button>
+              <button class="btn-no" onclick="this.closest('.bottom-sheet-preview').style.opacity='0.4'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                No, remove it
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- § 5 — Desktop Modal Card -->
+      <div>
+        <p style="font-size:11px;color:var(--text-dim);font-family:'Sora',sans-serif;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;">Desktop — Centered Modal</p>
+        <div class="modal-preview">
+          <button class="modal-close" aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <div class="sheet-banner" style="height:110px;">
+            <span class="sheet-banner-label">Tournament Photo</span>
+          </div>
+          <div class="sheet-body" style="padding-top:22px;">
+            <div class="sheet-tourney-name">Southwest Classic</div>
+            <div class="sheet-meta">Apr 5–7, 2026 · Scottsdale, AZ</div>
+            <div class="sheet-divider"></div>
+            <div class="sheet-question">Did you complete your registration?</div>
+            <div class="sheet-actions">
+              <button class="btn-yes" onclick="this.closest('.modal-preview').style.opacity='0.4'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Yes, I registered
+              </button>
+              <button class="btn-no" onclick="this.closest('.modal-preview').style.opacity='0.4'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                No, remove it
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       § 6  CONFLICT DETAIL IN MODAL
+  ════════════════════════════════════════ -->
+  <div class="spec-section">
+    <div class="spec-label">
+      <span class="spec-label-num">06</span>
+      <span class="spec-label-text">Conflict Detail — Inside Modal View</span>
+      <div class="spec-line"></div>
+    </div>
+
+    <div style="max-width:480px;margin:0 auto;">
+      <p style="font-size:11px;color:var(--text-dim);font-family:'Sora',sans-serif;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;">Modal with conflict callout visible</p>
+      <div class="conflict-modal-wrap">
+        <div class="conflict-modal-top">
+          <span class="conflict-modal-top-label">Tournament Photo</span>
+        </div>
+        <div class="conflict-modal-body">
+          <div class="conflict-modal-name">Desert Open Championship</div>
+          <div class="conflict-modal-meta">Apr 12–14, 2026 · Phoenix, AZ</div>
+          <div class="conflict-modal-divider"></div>
+
+          <div class="callout-amber">
+            <div class="callout-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="callout-text">
+              <strong>Schedule Conflict</strong>
+              This overlaps with <strong style="color:var(--text);font-family:inherit;font-size:inherit;display:inline;">Mountain West Invitational</strong> (Apr 19–21). You can still register if you want.
+              <br>
+              <a href="#" class="callout-link">View Conflict →</a>
+            </div>
+          </div>
+
+          <div class="badges" style="margin-bottom:18px;">
+            <span class="badge b-slate">3.0</span>
+            <span class="badge b-blue">3.5</span>
+            <span class="badge b-cyan">4.0</span>
+            <span class="badge b-green">5.0</span>
+          </div>
+
+          <button class="conflict-register-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Register Anyway
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+
+<!-- ── Live Modal Overlay (triggered by Card 1 Register button) ── -->
+<div class="modal-overlay" id="liveModalOverlay">
+  <div class="modal-live" id="liveModal">
+    <button class="modal-close" id="liveModalClose">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="sheet-banner" style="height:120px;">
+      <span class="sheet-banner-label">Tournament Photo</span>
+    </div>
+    <div class="sheet-body" style="padding-top:22px;">
+      <div class="sheet-tourney-name">Southwest Classic</div>
+      <div class="sheet-meta">Apr 5–7, 2026 · Scottsdale, AZ</div>
+      <div class="sheet-divider"></div>
+      <div class="sheet-question">Did you complete your registration?</div>
+      <div class="sheet-actions">
+        <button class="btn-yes" id="liveYes">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Yes, I registered
+        </button>
+        <button class="btn-no" id="liveNo">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          No, remove it
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ── User menu dropdown ── */
+const userMenuBtn = document.getElementById('userMenuBtn');
+const userDropdown = document.getElementById('userDropdown');
+
+userMenuBtn && userMenuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const open = userDropdown.classList.toggle('show');
+  userMenuBtn.classList.toggle('open', open);
+});
+
+document.addEventListener('click', () => {
+  userDropdown && userDropdown.classList.remove('show');
+  userMenuBtn && userMenuBtn.classList.remove('open');
+});
+
+/* ── Live modal ── */
+const overlay = document.getElementById('liveModalOverlay');
+const modal   = document.getElementById('liveModal');
+const openBtn = document.getElementById('openModalBtn');
+const closeBtn = document.getElementById('liveModalClose');
+const yesBtn  = document.getElementById('liveYes');
+const noBtn   = document.getElementById('liveNo');
+
+function openModal() {
+  overlay.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  overlay.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+openBtn && openBtn.addEventListener('click', openModal);
+closeBtn && closeBtn.addEventListener('click', closeModal);
+yesBtn && yesBtn.addEventListener('click', closeModal);
+noBtn && noBtn.addEventListener('click', closeModal);
+
+overlay && overlay.addEventListener('click', (e) => {
+  if (e.target === overlay) closeModal();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
