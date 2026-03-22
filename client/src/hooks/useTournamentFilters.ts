@@ -16,19 +16,21 @@ export function useTournamentFilters(): TournamentFiltersState {
     date: '',
     skillLevels: [],
     upcomingOnly: true,
+    registeredOnly: false,
   });
   const [page, setPageState] = useState(1);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    
+
     const location = params.get('location') || '';
     const date = params.get('date') || '';
     const skillLevels = params.get('skillLevels')?.split(',').filter(Boolean) || [];
     const pageParam = parseInt(params.get('page') || '1', 10);
     const upcomingOnly = params.get('upcomingOnly') !== 'false';
+    const registeredOnly = params.get('registeredOnly') === 'true';
 
-    setFiltersState({ location, date, skillLevels, upcomingOnly });
+    setFiltersState({ location, date, skillLevels, upcomingOnly, registeredOnly });
     setPageState(pageParam);
   }, []);
 
@@ -41,6 +43,7 @@ export function useTournamentFilters(): TournamentFiltersState {
       params.set('skillLevels', newFilters.skillLevels.join(','));
     }
     if (!newFilters.upcomingOnly) params.set('upcomingOnly', 'false');
+    if (newFilters.registeredOnly) params.set('registeredOnly', 'true');
     if (newPage > 1) params.set('page', String(newPage));
 
     const newURL = params.toString() 
@@ -67,6 +70,7 @@ export function useTournamentFilters(): TournamentFiltersState {
       date: '',
       skillLevels: [],
       upcomingOnly: true,
+      registeredOnly: false,
     };
     setFiltersState(emptyFilters);
     setPageState(1);

@@ -9,6 +9,7 @@ export interface TournamentFilters {
   date?: string;
   skillLevels?: string[];
   upcomingOnly?: boolean;
+  ids?: string[];
 }
 
 export interface PaginatedResponse<T> {
@@ -106,6 +107,9 @@ export async function fetchTournaments(
   }
   if (filters.upcomingOnly === false) {
     searchParams.set('upcomingOnly', 'false');
+  }
+  if (filters.ids && filters.ids.length > 0) {
+    filters.ids.forEach((id) => searchParams.append('ids', id));
   }
 
   const url = `${API_BASE_URL}/api/tournaments?${searchParams.toString()}`;

@@ -9,6 +9,7 @@ export interface TournamentFilters {
   date?: string;
   skillLevels?: string[];
   upcomingOnly?: boolean;
+  ids?: string[];
 }
 
 export interface GetTournamentsParams {
@@ -28,6 +29,10 @@ export async function getTournaments({
   filters,
 }: GetTournamentsParams): Promise<GetTournamentsResult> {
   const where: Prisma.TournamentWhereInput = {};
+
+  if (filters.ids && filters.ids.length > 0) {
+    where.id = { in: filters.ids };
+  }
 
   if (filters.location) {
     const locationSearch = filters.location.toLowerCase();

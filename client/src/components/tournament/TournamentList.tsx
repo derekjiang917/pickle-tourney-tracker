@@ -7,6 +7,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
 import { SearchX } from 'lucide-react';
 import { FilterState } from '@/components/filters/FilterPanel';
+import { useSignups } from '@/hooks/useSignups';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -24,9 +25,9 @@ interface ScrapeStatus {
   } | null;
 }
 
-export function TournamentList({ 
-  filters, 
-  currentPage, 
+export function TournamentList({
+  filters,
+  currentPage,
   onPageChange,
   hasActiveFilters,
   onClearFilters,
@@ -38,17 +39,23 @@ export function TournamentList({
   const [total, setTotal] = useState(0);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const { registrations } = useSignups();
 
   useEffect(() => {
     const loadTournaments = async () => {
       setLoading(true);
       setError(null);
       try {
+        const registeredIds = filters.registeredOnly
+          ? registrations.map((r) => r.tournamentId)
+          : undefined;
+
         const apiFilters: TournamentFilters = {
           location: filters.location || undefined,
           date: filters.date || undefined,
           skillLevels: filters.skillLevels.length > 0 ? filters.skillLevels : undefined,
           upcomingOnly: filters.upcomingOnly,
+          ids: registeredIds,
         };
         
         const response = await fetchTournaments({
@@ -67,7 +74,7 @@ export function TournamentList({
     };
 
     loadTournaments();
-  }, [filters, currentPage]);
+  }, [filters, currentPage, registrations]);
 
   if (loading) {
     return (

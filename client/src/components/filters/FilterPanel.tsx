@@ -3,12 +3,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface FilterState {
   location: string;
   date: string;
   skillLevels: string[];
   upcomingOnly: boolean;
+  registeredOnly: boolean;
 }
 
 interface FilterPanelProps {
@@ -20,6 +22,7 @@ interface FilterPanelProps {
 const SKILL_LEVELS = ['3.0', '3.5', '4.0', '4.5', '5.0+'];
 
 export function FilterPanel({ filters, onFiltersChange, onClearFilters }: FilterPanelProps) {
+  const { isAuthenticated } = useAuth();
   const [localLocation, setLocalLocation] = useState(filters.location);
 
   useEffect(() => {
@@ -46,7 +49,7 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
   );
 
   const hasActiveFilters =
-    filters.location || filters.date || filters.skillLevels.length > 0 || !filters.upcomingOnly;
+    filters.location || filters.date || filters.skillLevels.length > 0 || !filters.upcomingOnly || filters.registeredOnly;
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -101,6 +104,23 @@ export function FilterPanel({ filters, onFiltersChange, onClearFilters }: Filter
           Upcoming only
         </label>
       </div>
+
+      {/* Registered only toggle — auth-gated */}
+      {isAuthenticated && (
+        <>
+          <div className="h-5 w-px bg-border hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <Switch
+              id="registered-only"
+              checked={filters.registeredOnly}
+              onCheckedChange={() => onFiltersChange({ ...filters, registeredOnly: !filters.registeredOnly })}
+            />
+            <label htmlFor="registered-only" className="text-sm cursor-pointer whitespace-nowrap">
+              My registrations
+            </label>
+          </div>
+        </>
+      )}
 
       {/* Clear */}
       {hasActiveFilters && (

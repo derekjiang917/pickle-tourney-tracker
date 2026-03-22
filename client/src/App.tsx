@@ -29,7 +29,7 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const hasActiveFilters = Boolean(filters.location || filters.date || filters.skillLevels.length > 0);
+  const hasActiveFilters = Boolean(filters.location || filters.date || filters.skillLevels.length > 0 || filters.registeredOnly);
 
   return (
     <>
