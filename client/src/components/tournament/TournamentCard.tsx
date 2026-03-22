@@ -55,6 +55,14 @@ export function TournamentCard({ tournament, onSelect }: TournamentCardProps) {
       className="flex flex-col bg-card border border-border/60 rounded-[10px] overflow-hidden cursor-pointer transition-all duration-200 hover:bg-[#202020] hover:border-[rgba(34,197,94,0.22)] hover:shadow-[0_0_0_1px_rgba(34,197,94,0.12),0_12px_32px_rgba(0,0,0,0.5)] hover:-translate-y-0.5"
       onClick={() => onSelect(tournament)}
     >
+      {/* Top accent line for registered tournaments */}
+      {status === 'CONFIRMED' && (
+        <div className="h-[3px] w-full flex-shrink-0" style={{ background: 'linear-gradient(90deg, #22c55e 0%, rgba(34,197,94,0.4) 60%, transparent 100%)' }} />
+      )}
+      {status === 'PENDING' && (
+        <div className="h-[3px] w-full flex-shrink-0" style={{ background: 'linear-gradient(90deg, #eab308 0%, rgba(234,179,8,0.4) 60%, transparent 100%)' }} />
+      )}
+
       {/* Body: left content col + right image col */}
       <div className="flex flex-1">
         <div className="flex-1 flex flex-col gap-2 p-3.5 min-w-0">
