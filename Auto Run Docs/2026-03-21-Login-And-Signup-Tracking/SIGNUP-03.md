@@ -37,7 +37,7 @@ The existing app aesthetic: dark background, DM Sans font, green primary (`#22c5
 
   Make it fully interactive with JS: clicking the popup buttons should dismiss it with a satisfying animation.
 
-- [ ] **Create Design B: "Scoreboard" aesthetic — `signup-design-b.html`**
+- [x] **Create Design B: "Scoreboard" aesthetic — `signup-design-b.html`**
 
   Save to `/home/coole/pickle-tourney-tracker/signup-design-b.html`.
 

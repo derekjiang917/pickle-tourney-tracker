@@ -1,0 +1,1681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design B — Scoreboard | Pickle Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   DESIGN SYSTEM — Electric Retro Scoreboard
+   ============================================================ */
+:root {
+  --bg:        #0a0a12;
+  --bg2:       #0d0d1a;
+  --panel:     #0f0f1f;
+  --panel2:    #12122a;
+  --border:    #1e1e3a;
+  --cyan:      #00e5ff;
+  --magenta:   #ff2d78;
+  --neon:      #39ff14;
+  --amber:     #ff9500;
+  --alarm:     #ff1a1a;
+  --dim:       #2a2a4a;
+  --muted:     #4a4a7a;
+  --text:      #c8d0e8;
+  --text-dim:  #6a6a9a;
+
+  --glow-cyan:    0 0 10px #00e5ff88, 0 0 30px #00e5ff44, 0 0 60px #00e5ff22;
+  --glow-neon:    0 0 10px #39ff1488, 0 0 30px #39ff1444, 0 0 60px #39ff1422;
+  --glow-magenta: 0 0 10px #ff2d7888, 0 0 30px #ff2d7844;
+  --glow-amber:   0 0 10px #ff950088, 0 0 30px #ff950044;
+  --glow-alarm:   0 0 10px #ff1a1a88, 0 0 30px #ff1a1a44;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Share Tech Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* Stadium grid pattern */
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ============================================================
+   SECTION LABELS
+   ============================================================ */
+.section-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--magenta);
+  padding: 0.4rem 1rem;
+  background: rgba(255, 45, 120, 0.08);
+  border-left: 3px solid var(--magenta);
+  margin-bottom: 0;
+  opacity: 0.7;
+}
+
+/* ============================================================
+   KEYFRAME ANIMATIONS
+   ============================================================ */
+@keyframes pulse-glow {
+  0%, 100% {
+    text-shadow: 0 0 6px #39ff1488, 0 0 18px #39ff1444;
+    box-shadow: 0 0 8px #39ff1444;
+  }
+  50% {
+    text-shadow: 0 0 14px #39ff14cc, 0 0 40px #39ff1488, 0 0 80px #39ff1444;
+    box-shadow: 0 0 18px #39ff1488, 0 0 40px #39ff1444;
+  }
+}
+
+@keyframes scanline {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  10%  { opacity: 0.15; }
+  90%  { opacity: 0.15; }
+  100% { transform: translateY(400px); opacity: 0; }
+}
+
+@keyframes flicker {
+  0%   { opacity: 1; }
+  5%   { opacity: 0.7; }
+  10%  { opacity: 1; }
+  25%  { opacity: 1; }
+  30%  { opacity: 0.5; }
+  35%  { opacity: 1; }
+  55%  { opacity: 1; }
+  60%  { opacity: 0.8; }
+  65%  { opacity: 1; }
+  90%  { opacity: 1; }
+  95%  { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+@keyframes ticker-scroll {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes power-down {
+  0%   { transform: scaleY(1) scaleX(1); opacity: 1; filter: brightness(1); }
+  30%  { transform: scaleY(1) scaleX(1); opacity: 1; filter: brightness(2); }
+  60%  { transform: scaleY(0.04) scaleX(1); opacity: 1; filter: brightness(3); }
+  80%  { transform: scaleY(0.04) scaleX(0.2); opacity: 0.8; filter: brightness(5); }
+  100% { transform: scaleY(0) scaleX(0); opacity: 0; filter: brightness(0); }
+}
+
+@keyframes power-down-overlay {
+  0%   { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes card-scan {
+  0%   { top: -10%; }
+  100% { top: 110%; }
+}
+
+@keyframes border-glow-cyan {
+  0%, 100% { box-shadow: 0 0 8px rgba(0,229,255,0.2), inset 0 0 8px rgba(0,229,255,0.05); }
+  50%       { box-shadow: 0 0 20px rgba(0,229,255,0.4), inset 0 0 14px rgba(0,229,255,0.1); }
+}
+
+@keyframes border-glow-neon {
+  0%, 100% { box-shadow: 0 0 8px rgba(57,255,20,0.25), inset 0 0 8px rgba(57,255,20,0.06); }
+  50%       { box-shadow: 0 0 24px rgba(57,255,20,0.5), inset 0 0 16px rgba(57,255,20,0.12); }
+}
+
+@keyframes border-glow-alarm {
+  0%, 100% { box-shadow: 0 0 8px rgba(255,26,26,0.25), inset 0 0 8px rgba(255,26,26,0.06); }
+  50%       { box-shadow: 0 0 24px rgba(255,26,26,0.5), inset 0 0 16px rgba(255,26,26,0.12); }
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes ticker-fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { transform: translateY(-20px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes alarm-flash {
+  0%, 100% { background: linear-gradient(90deg, #1a0000, #200800, #1a0000); }
+  50%       { background: linear-gradient(90deg, #3a0000, #401500, #3a0000); }
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,229,255,0.04) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  gap: 1rem;
+}
+
+.logo {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.logo-bracket {
+  color: var(--magenta);
+  text-shadow: var(--glow-magenta);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.logo-cursor {
+  display: inline-block;
+  width: 3px;
+  height: 1.4rem;
+  background: var(--cyan);
+  box-shadow: var(--glow-cyan);
+  animation: blink-cursor 1.1s step-end infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+/* Ticker */
+.header-ticker {
+  flex: 1;
+  overflow: hidden;
+  height: 26px;
+  position: relative;
+  border-left: 1px solid var(--dim);
+  border-right: 1px solid var(--dim);
+  margin: 0 1rem;
+}
+
+.header-ticker::before,
+.header-ticker::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; width: 40px;
+  z-index: 2;
+  pointer-events: none;
+}
+.header-ticker::before { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
+.header-ticker::after  { right: 0; background: linear-gradient(-90deg, var(--bg), transparent); }
+
+.ticker-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+  animation: ticker-scroll 24s linear infinite;
+}
+
+.ticker-text {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--magenta);
+  text-shadow: 0 0 8px rgba(255,45,120,0.6);
+}
+
+.ticker-sep {
+  color: var(--magenta);
+  margin: 0 1.5rem;
+  opacity: 0.5;
+}
+
+/* Sign In Button */
+.btn-signin {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--cyan);
+  background: transparent;
+  border: 2px solid var(--cyan);
+  padding: 0.55rem 1.2rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  position: relative;
+  transition: all 0.2s ease;
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+}
+
+.btn-signin:hover {
+  background: rgba(0, 229, 255, 0.12);
+  box-shadow: var(--glow-cyan);
+  color: #fff;
+}
+
+.btn-signin::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, var(--cyan), transparent, var(--cyan));
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: -1;
+}
+.btn-signin:hover::before { opacity: 0.2; }
+
+/* Player Tag */
+.player-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.player-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--neon);
+  box-shadow: var(--glow-neon);
+  background: radial-gradient(circle at 40% 35%, #1a3a2a, #0a1a0f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--neon);
+  text-shadow: 0 0 8px var(--neon);
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.player-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--neon);
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+}
+
+.player-signout {
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s;
+  display: block;
+}
+.player-signout:hover { color: var(--text-dim); }
+
+/* Scoreline bar */
+.header-scoreline {
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  padding: 0.3rem 2rem;
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.score-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.score-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.score-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--cyan);
+  text-shadow: 0 0 8px rgba(0,229,255,0.5);
+}
+
+/* ============================================================
+   MAIN LAYOUT
+   ============================================================ */
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.section-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--dim);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.section-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.section-title span {
+  color: var(--magenta);
+  text-shadow: 0 0 8px rgba(255,45,120,0.5);
+}
+
+.section-divider {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--dim), transparent);
+}
+
+/* ============================================================
+   TOURNAMENT CARDS
+   ============================================================ */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 900px) {
+  .card-grid { grid-template-columns: 1fr; }
+}
+
+.tourney-card {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  cursor: default;
+}
+
+/* Scan-line effect */
+.tourney-card::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 60px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(0, 229, 255, 0.06) 50%,
+    transparent 100%
+  );
+  animation: card-scan 5s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Corner notches */
+.tourney-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 14px; height: 14px;
+  border-top: 2px solid var(--cyan);
+  border-left: 2px solid var(--cyan);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Normal card */
+.card-normal {
+  border-color: rgba(0, 229, 255, 0.3);
+  animation: border-glow-cyan 4s ease-in-out infinite;
+}
+
+/* Registered card */
+.card-registered {
+  border-color: rgba(57, 255, 20, 0.4);
+  animation: border-glow-neon 3s ease-in-out infinite;
+}
+
+/* Conflict card */
+.card-conflict {
+  border-color: rgba(255, 26, 26, 0.4);
+  animation: border-glow-alarm 2s ease-in-out infinite;
+}
+
+/* CONFLICT strip */
+.conflict-strip {
+  padding: 0.45rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--alarm);
+  text-shadow: 0 0 8px rgba(255,26,26,0.6);
+  animation: alarm-flash 0.8s ease-in-out infinite, flicker 2.5s linear infinite;
+  border-bottom: 1px solid rgba(255,26,26,0.3);
+  position: relative;
+  z-index: 3;
+}
+
+.conflict-strip-icon { font-size: 0.8rem; }
+
+/* REGISTERED badge */
+.registered-badge {
+  position: absolute;
+  top: 10px; right: 10px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--neon);
+  text-shadow: 0 0 8px var(--neon);
+  background: rgba(0, 10, 0, 0.85);
+  border: 1px solid rgba(57,255,20,0.4);
+  padding: 0.3rem 0.55rem;
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+.registered-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--neon);
+  box-shadow: 0 0 8px var(--neon), 0 0 16px var(--neon);
+  animation: pulse-glow 1.2s ease-in-out infinite;
+}
+
+/* Card body */
+.card-body {
+  padding: 1rem 1rem 0.75rem;
+  position: relative;
+  z-index: 2;
+}
+
+.card-source {
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  color: var(--cyan);
+  text-shadow: 0 0 8px rgba(0,229,255,0.4);
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.card-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #e0e8ff;
+  line-height: 1.25;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+}
+
+.card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.9rem;
+}
+
+.card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+}
+
+.meta-icon {
+  color: var(--cyan);
+  opacity: 0.6;
+  width: 12px;
+  text-align: center;
+}
+
+.meta-val {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text);
+  font-size: 0.7rem;
+}
+
+.card-divider {
+  height: 1px;
+  background: linear-gradient(90deg, var(--dim), transparent);
+  margin: 0.75rem 0;
+}
+
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.skill-tag {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--cyan);
+  border: 1px solid rgba(0,229,255,0.3);
+  background: rgba(0,229,255,0.06);
+  padding: 0.2rem 0.5rem;
+}
+
+/* Card footer */
+.card-footer {
+  padding: 0 1rem 1rem;
+  position: relative;
+  z-index: 2;
+}
+
+/* Buttons */
+.btn-register {
+  width: 100%;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--cyan);
+  background: transparent;
+  color: var(--cyan);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.btn-register::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--cyan);
+  transform: translateX(-101%);
+  transition: transform 0.2s ease;
+  z-index: -1;
+}
+
+.btn-register:hover {
+  color: var(--bg);
+  box-shadow: var(--glow-cyan);
+}
+
+.btn-register:hover::before {
+  transform: translateX(0);
+}
+
+.btn-entered {
+  width: 100%;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--dim);
+  background: var(--dim);
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.btn-conflict {
+  width: 100%;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--alarm);
+  background: rgba(255, 26, 26, 0.1);
+  color: var(--alarm);
+  cursor: pointer;
+  transition: all 0.2s;
+  animation: flicker 3s linear infinite;
+}
+
+.btn-conflict:hover {
+  background: rgba(255, 26, 26, 0.2);
+  box-shadow: var(--glow-alarm);
+}
+
+/* ============================================================
+   CONFIRMATION POPUP
+   ============================================================ */
+.popup-section {
+  position: relative;
+  min-height: 360px;
+  margin-bottom: 2rem;
+  border: 1px solid var(--dim);
+  overflow: hidden;
+}
+
+.popup-bg {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 15, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: opacity 0.1s;
+}
+
+.popup-panel {
+  width: 100%;
+  max-width: 520px;
+  background: var(--panel);
+  border: 2px solid var(--cyan);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--glow-cyan), 0 0 80px rgba(0,229,255,0.15);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  transform-origin: center center;
+}
+
+.popup-panel.powering-down {
+  animation: power-down 0.55s ease-in forwards;
+}
+
+.popup-panel.power-down-overlay {
+  animation: power-down-overlay 0.55s ease-in forwards;
+}
+
+/* Scan lines overlay */
+.popup-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 229, 255, 0.025) 3px,
+    rgba(0, 229, 255, 0.025) 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Moving scan line */
+.popup-scan-beam {
+  position: absolute;
+  left: 0; right: 0;
+  height: 80px;
+  background: linear-gradient(180deg,
+    transparent 0%,
+    rgba(0, 229, 255, 0.07) 50%,
+    transparent 100%
+  );
+  animation: card-scan 3s linear infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.popup-header {
+  background: var(--panel2);
+  border-bottom: 1px solid var(--dim);
+  padding: 0.6rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 4;
+}
+
+.popup-header-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--cyan);
+  opacity: 0.7;
+}
+
+.popup-header-dots {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.popup-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.popup-dot:nth-child(1) { background: var(--alarm); }
+.popup-dot:nth-child(2) { background: var(--amber); }
+.popup-dot:nth-child(3) { background: var(--neon); }
+
+.popup-body {
+  padding: 2rem 2rem 1.75rem;
+  text-align: center;
+  position: relative;
+  z-index: 4;
+}
+
+.popup-question {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.popup-tourney-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+.popup-dates {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.1em;
+}
+
+.popup-prompt {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--text);
+  text-transform: uppercase;
+  margin-bottom: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--dim);
+}
+
+.popup-prompt span {
+  color: var(--magenta);
+  text-shadow: 0 0 10px rgba(255,45,120,0.5);
+}
+
+.popup-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.btn-confirm-yes {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 1rem 1.25rem;
+  border: 2px solid var(--neon);
+  background: rgba(57, 255, 20, 0.12);
+  color: var(--neon);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.btn-confirm-yes:hover {
+  background: rgba(57, 255, 20, 0.22);
+  box-shadow: var(--glow-neon);
+  color: #fff;
+}
+
+.btn-confirm-no {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 1rem 1.25rem;
+  border: 2px solid var(--alarm);
+  background: rgba(255, 26, 26, 0.12);
+  color: var(--alarm);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.btn-confirm-no:hover {
+  background: rgba(255, 26, 26, 0.22);
+  box-shadow: var(--glow-alarm);
+  color: #fff;
+}
+
+.popup-bg-cards {
+  position: absolute;
+  inset: 0;
+  padding: 2rem;
+  display: flex;
+  gap: 1rem;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.popup-bg-card {
+  flex: 1;
+  height: 100%;
+  border: 1px solid var(--dim);
+  background: var(--panel);
+  position: relative;
+  overflow: hidden;
+}
+
+.popup-bg-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 5px,
+    rgba(255,255,255,0.01) 5px,
+    rgba(255,255,255,0.01) 6px
+  );
+}
+
+/* ============================================================
+   CONFLICT MODAL
+   ============================================================ */
+.conflict-modal-wrap {
+  position: relative;
+  padding: 2rem 0;
+}
+
+.conflict-modal {
+  background: var(--panel);
+  border: 1px solid rgba(255,149,0,0.3);
+  max-width: 700px;
+  margin: 0 auto;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(255,149,0,0.1);
+}
+
+/* Ticker banner */
+.conflict-ticker-wrap {
+  overflow: hidden;
+  background: linear-gradient(90deg, #1a0800, #200e00, #1a0800);
+  border-bottom: 1px solid rgba(255,149,0,0.4);
+  height: 36px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  animation: flicker 4s linear infinite;
+}
+
+.conflict-ticker-inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+  animation: ticker-scroll 12s linear infinite;
+}
+
+.conflict-ticker-text {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--amber);
+  text-shadow: 0 0 8px rgba(255,149,0,0.7);
+}
+
+.conflict-ticker-sep {
+  color: var(--alarm);
+  margin: 0 1rem;
+  text-shadow: 0 0 6px rgba(255,26,26,0.7);
+}
+
+.modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--dim);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.modal-close {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  cursor: pointer;
+  letter-spacing: 0.12em;
+  border: 1px solid var(--dim);
+  background: transparent;
+  padding: 0.3rem 0.6rem;
+  transition: all 0.2s;
+}
+.modal-close:hover { color: var(--text); border-color: var(--muted); }
+
+.modal-body {
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem;
+}
+
+.modal-info { }
+
+.modal-tourney-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #e0e8ff;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.modal-dates {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.85rem;
+  color: var(--amber);
+  text-shadow: 0 0 8px rgba(255,149,0,0.4);
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.08em;
+}
+
+.modal-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.modal-meta-item {
+  border: 1px solid var(--dim);
+  background: var(--bg);
+  padding: 0.5rem 0.75rem;
+}
+
+.modal-meta-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.modal-meta-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+/* Conflict detail callout */
+.conflict-callout {
+  border: 1px solid rgba(255,149,0,0.4);
+  background: rgba(255,149,0,0.06);
+  padding: 0.9rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.conflict-callout-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-family: 'Orbitron', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--amber);
+  text-shadow: 0 0 8px rgba(255,149,0,0.5);
+  text-transform: uppercase;
+}
+
+.conflict-callout-body {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.conflict-callout-tourney {
+  color: var(--alarm);
+  font-weight: bold;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  justify-content: flex-start;
+  padding-top: 0.25rem;
+}
+
+.btn-modal-register {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.65rem 1.1rem;
+  border: 2px solid var(--cyan);
+  background: transparent;
+  color: var(--cyan);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-modal-register:hover {
+  background: rgba(0,229,255,0.1);
+  box-shadow: var(--glow-cyan);
+}
+
+.btn-modal-conflict {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.65rem 1.1rem;
+  border: 2px solid var(--alarm);
+  background: rgba(255,26,26,0.08);
+  color: var(--alarm);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  animation: flicker 2.5s linear infinite;
+}
+
+/* ============================================================
+   SPACING UTILITIES
+   ============================================================ */
+.mt-2 { margin-top: 2rem; }
+.mt-3 { margin-top: 3rem; }
+.mb-1 { margin-bottom: 1rem; }
+.mb-2 { margin-bottom: 2rem; }
+
+/* Popup re-show button */
+.popup-restore {
+  text-align: center;
+  padding: 1.5rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  display: none;
+}
+
+.popup-restore.visible { display: block; }
+
+.btn-restore {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--cyan);
+  background: transparent;
+  border: 1px solid rgba(0,229,255,0.3);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: all 0.2s;
+}
+.btn-restore:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0,229,255,0.3);
+}
+
+/* Status line */
+.status-bar {
+  background: var(--panel);
+  border-top: 1px solid var(--dim);
+  padding: 0.35rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--neon);
+  box-shadow: 0 0 6px var(--neon);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.status-sep { color: var(--dim); }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SECTION 1: LOGGED-OUT HEADER
+     ============================================================ -->
+<div class="section-label">SECTION 01 — HEADER / LOGGED OUT STATE</div>
+<header class="header">
+  <div class="header-top">
+    <a href="#" class="logo">
+      <span class="logo-bracket">[</span>
+      PICKLE&nbsp;TRACKER
+      <span class="logo-bracket">]</span>
+      <span class="logo-cursor"></span>
+    </a>
+
+    <div class="header-ticker">
+      <div class="ticker-inner">
+        <span class="ticker-text">UPCOMING: 142 TOURNAMENTS</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">OPEN REGISTRATION: 47</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">THIS WEEKEND: 8</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">NEW THIS WEEK: 12</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">UPCOMING: 142 TOURNAMENTS</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">OPEN REGISTRATION: 47</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">THIS WEEKEND: 8</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">NEW THIS WEEK: 12</span>
+        <span class="ticker-sep">◆</span>
+      </div>
+    </div>
+
+    <button class="btn-signin">SIGN IN</button>
+  </div>
+  <div class="header-scoreline">
+    <div class="score-item">
+      <span class="score-label">EVENTS</span>
+      <span class="score-value">142</span>
+    </div>
+    <div class="score-item">
+      <span class="score-label">OPEN REG</span>
+      <span class="score-value">47</span>
+    </div>
+    <div class="score-item">
+      <span class="score-label">THIS WEEK</span>
+      <span class="score-value">08</span>
+    </div>
+    <div class="score-item">
+      <span class="score-label">LAST SYNC</span>
+      <span class="score-value" style="font-size:0.7rem; color:var(--text-dim)">06:00 UTC</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     SECTION 2: LOGGED-IN HEADER
+     ============================================================ -->
+<div class="section-label" style="margin-top:2rem">SECTION 02 — HEADER / LOGGED IN STATE</div>
+<header class="header">
+  <div class="header-top">
+    <a href="#" class="logo">
+      <span class="logo-bracket">[</span>
+      PICKLE&nbsp;TRACKER
+      <span class="logo-bracket">]</span>
+      <span class="logo-cursor"></span>
+    </a>
+
+    <div class="header-ticker">
+      <div class="ticker-inner">
+        <span class="ticker-text">UPCOMING: 142 TOURNAMENTS</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">OPEN REGISTRATION: 47</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">THIS WEEKEND: 8</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">JANE SMITH — 3 REGISTERED</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">UPCOMING: 142 TOURNAMENTS</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">OPEN REGISTRATION: 47</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">THIS WEEKEND: 8</span>
+        <span class="ticker-sep">◆</span>
+        <span class="ticker-text">JANE SMITH — 3 REGISTERED</span>
+        <span class="ticker-sep">◆</span>
+      </div>
+    </div>
+
+    <div class="player-tag">
+      <div class="player-avatar">P1</div>
+      <div>
+        <div class="player-name">JANE SMITH</div>
+        <a href="#" class="player-signout">[ SIGN OUT ]</a>
+      </div>
+    </div>
+  </div>
+  <div class="header-scoreline">
+    <div class="score-item">
+      <span class="score-label">EVENTS</span>
+      <span class="score-value">142</span>
+    </div>
+    <div class="score-item">
+      <span class="score-label">REGISTERED</span>
+      <span class="score-value" style="color:var(--neon); text-shadow: 0 0 8px rgba(57,255,20,0.5)">03</span>
+    </div>
+    <div class="score-item">
+      <span class="score-label">CONFLICTS</span>
+      <span class="score-value" style="color:var(--alarm); text-shadow: 0 0 8px rgba(255,26,26,0.5)">01</span>
+    </div>
+    <div class="score-item">
+      <span class="score-label">PLAYER RANK</span>
+      <span class="score-value" style="font-size:0.75rem; color:var(--magenta); text-shadow: 0 0 8px rgba(255,45,120,0.5)">4.0</span>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<main class="main">
+
+  <!-- SECTION 3: CARDS -->
+  <div class="section-header mt-2">
+    <div class="section-title">SECTION 03 — <span>TOURNAMENT CARDS</span></div>
+    <div class="section-divider"></div>
+    <div class="section-title" style="white-space:nowrap">3 STATES SHOWN</div>
+  </div>
+
+  <div class="card-grid mb-2">
+
+    <!-- Card 1: Normal -->
+    <div class="tourney-card card-normal">
+      <div class="card-body">
+        <div class="card-source">MAINCOURT.COM</div>
+        <div class="card-name">Desert Slam Open</div>
+        <div class="card-meta">
+          <div class="card-meta-row">
+            <span class="meta-icon">▶</span>
+            <span class="meta-val">MAR 28 – MAR 30, 2026</span>
+          </div>
+          <div class="card-meta-row">
+            <span class="meta-icon">◈</span>
+            <span class="meta-val">Scottsdale, AZ</span>
+          </div>
+          <div class="card-meta-row">
+            <span class="meta-icon">◎</span>
+            <span class="meta-val">Desert Ridge Sports Complex</span>
+          </div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="skill-tags">
+          <span class="skill-tag">3.5</span>
+          <span class="skill-tag">4.0</span>
+          <span class="skill-tag">4.5</span>
+          <span class="skill-tag">5.0+</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn-register" onclick="showPopup()">REGISTER →</button>
+      </div>
+    </div>
+
+    <!-- Card 2: Registered -->
+    <div class="tourney-card card-registered">
+      <div class="registered-badge">
+        <span class="registered-dot"></span>
+        REGISTERED
+      </div>
+      <div class="card-body">
+        <div class="card-source">PICKLEBALLTOURNAMENTS.COM</div>
+        <div class="card-name">Mountain Classic</div>
+        <div class="card-meta">
+          <div class="card-meta-row">
+            <span class="meta-icon">▶</span>
+            <span class="meta-val">APR 12 – APR 14, 2026</span>
+          </div>
+          <div class="card-meta-row">
+            <span class="meta-icon">◈</span>
+            <span class="meta-val">Denver, CO</span>
+          </div>
+          <div class="card-meta-row">
+            <span class="meta-icon">◎</span>
+            <span class="meta-val">Altitude Sports Center</span>
+          </div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="skill-tags">
+          <span class="skill-tag" style="color:var(--neon); border-color:rgba(57,255,20,0.3); background:rgba(57,255,20,0.06)">3.5</span>
+          <span class="skill-tag" style="color:var(--neon); border-color:rgba(57,255,20,0.3); background:rgba(57,255,20,0.06)">4.0</span>
+          <span class="skill-tag" style="color:var(--neon); border-color:rgba(57,255,20,0.3); background:rgba(57,255,20,0.06)">4.5</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn-entered" disabled>✓ ENTERED</button>
+      </div>
+    </div>
+
+    <!-- Card 3: Conflict -->
+    <div class="tourney-card card-conflict">
+      <div class="conflict-strip">
+        <span class="conflict-strip-icon">⚡</span>
+        SCHEDULE CONFLICT DETECTED
+      </div>
+      <div class="card-body" style="padding-top:0.75rem">
+        <div class="card-source">MAINCOURT.COM</div>
+        <div class="card-name">Coastal Cup</div>
+        <div class="card-meta">
+          <div class="card-meta-row">
+            <span class="meta-icon">▶</span>
+            <span class="meta-val">APR 13 – APR 15, 2026</span>
+          </div>
+          <div class="card-meta-row">
+            <span class="meta-icon">◈</span>
+            <span class="meta-val">San Diego, CA</span>
+          </div>
+          <div class="card-meta-row">
+            <span class="meta-icon">◎</span>
+            <span class="meta-val">Oceanside Sports Park</span>
+          </div>
+        </div>
+        <div class="card-divider"></div>
+        <div class="skill-tags">
+          <span class="skill-tag" style="color:var(--alarm); border-color:rgba(255,26,26,0.3); background:rgba(255,26,26,0.06)">3.5</span>
+          <span class="skill-tag" style="color:var(--alarm); border-color:rgba(255,26,26,0.3); background:rgba(255,26,26,0.06)">4.0</span>
+          <span class="skill-tag" style="color:var(--alarm); border-color:rgba(255,26,26,0.3); background:rgba(255,26,26,0.06)">4.5</span>
+          <span class="skill-tag" style="color:var(--alarm); border-color:rgba(255,26,26,0.3); background:rgba(255,26,26,0.06)">5.0+</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn-conflict">⚡ SCHEDULE CONFLICT</button>
+      </div>
+    </div>
+
+  </div><!-- end card-grid -->
+
+  <!-- SECTION 4: CONFIRMATION POPUP -->
+  <div class="section-header mt-3">
+    <div class="section-title">SECTION 04 — <span>CONFIRMATION POPUP</span></div>
+    <div class="section-divider"></div>
+    <div class="section-title" style="white-space:nowrap">INTERACTIVE</div>
+  </div>
+
+  <div class="popup-section" id="popupSection">
+
+    <!-- Blurred background cards -->
+    <div class="popup-bg-cards">
+      <div class="popup-bg-card"></div>
+      <div class="popup-bg-card"></div>
+      <div class="popup-bg-card"></div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="popup-bg" id="popupOverlay">
+      <div class="popup-panel" id="popupPanel">
+        <!-- Static scan lines -->
+        <div class="popup-scanlines"></div>
+        <!-- Moving scan beam -->
+        <div class="popup-scan-beam"></div>
+
+        <div class="popup-header">
+          <span class="popup-header-label">REGISTRATION CONFIRM — PROMPT_ID: 0x7A3F</span>
+          <div class="popup-header-dots">
+            <div class="popup-dot"></div>
+            <div class="popup-dot"></div>
+            <div class="popup-dot"></div>
+          </div>
+        </div>
+
+        <div class="popup-body">
+          <div class="popup-question">// CONFIRMATION REQUIRED //</div>
+          <div class="popup-tourney-name">DESERT SLAM<br>OPEN</div>
+          <div class="popup-dates">MAR 28 – 30, 2026 &nbsp;◆&nbsp; SCOTTSDALE, AZ</div>
+
+          <div class="popup-prompt">
+            DID YOU COMPLETE YOUR <span>REGISTRATION?</span>
+          </div>
+
+          <div class="popup-buttons">
+            <button class="btn-confirm-yes" id="btnYes">Y — CONFIRMED</button>
+            <button class="btn-confirm-no" id="btnNo">N — REMOVE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Restore button (shown after dismiss) -->
+    <div class="popup-restore" id="popupRestore">
+      <div>// POPUP DISMISSED //</div>
+      <button class="btn-restore" onclick="showPopup()">▶ REPLAY POPUP</button>
+    </div>
+
+  </div>
+
+  <!-- SECTION 5: CONFLICT MODAL -->
+  <div class="section-header mt-3">
+    <div class="section-title">SECTION 05 — <span>CONFLICT DETAIL MODAL</span></div>
+    <div class="section-divider"></div>
+  </div>
+
+  <div class="conflict-modal-wrap">
+    <div class="conflict-modal">
+
+      <!-- Scrolling conflict ticker -->
+      <div class="conflict-ticker-wrap">
+        <div class="conflict-ticker-inner">
+          <span class="conflict-ticker-text">⚡ SCHEDULE CONFLICT DETECTED</span>
+          <span class="conflict-ticker-sep">///</span>
+          <span class="conflict-ticker-text">OVERLAPS WITH: MOUNTAIN CLASSIC — APR 12–14</span>
+          <span class="conflict-ticker-sep">///</span>
+          <span class="conflict-ticker-text">DENVER, CO &nbsp;◆&nbsp; APR 12–14, 2026</span>
+          <span class="conflict-ticker-sep">///</span>
+          <span class="conflict-ticker-text">⚡ SCHEDULE CONFLICT DETECTED</span>
+          <span class="conflict-ticker-sep">///</span>
+          <span class="conflict-ticker-text">OVERLAPS WITH: MOUNTAIN CLASSIC — APR 12–14</span>
+          <span class="conflict-ticker-sep">///</span>
+          <span class="conflict-ticker-text">DENVER, CO &nbsp;◆&nbsp; APR 12–14, 2026</span>
+          <span class="conflict-ticker-sep">///</span>
+        </div>
+      </div>
+
+      <!-- Modal header -->
+      <div class="modal-header">
+        <div class="modal-title">TOURNAMENT DETAIL / COASTAL CUP</div>
+        <button class="modal-close">[ CLOSE ]</button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body">
+        <div class="modal-info">
+          <div class="modal-tourney-name">Coastal Cup</div>
+          <div class="modal-dates">APR 13 – APR 15, 2026</div>
+
+          <!-- Conflict callout -->
+          <div class="conflict-callout">
+            <div class="conflict-callout-head">
+              ⚡ SCHEDULE CONFLICT DETECTED
+            </div>
+            <div class="conflict-callout-body">
+              OVERLAPS WITH REGISTERED EVENT:&nbsp;
+              <span class="conflict-tourney-name" style="color:var(--alarm); font-family: 'Orbitron', monospace; font-size:0.7rem">MOUNTAIN CLASSIC</span>
+              <br>
+              APR 12–14, 2026 &nbsp;◆&nbsp; Denver, CO
+              <br><br>
+              <span style="color:var(--text-dim)">You can still register — conflicts are tracked automatically.</span>
+            </div>
+          </div>
+
+          <div class="modal-meta-grid">
+            <div class="modal-meta-item">
+              <div class="modal-meta-label">Location</div>
+              <div class="modal-meta-val">San Diego, CA</div>
+            </div>
+            <div class="modal-meta-item">
+              <div class="modal-meta-label">Venue</div>
+              <div class="modal-meta-val">Oceanside Sports Park</div>
+            </div>
+            <div class="modal-meta-item">
+              <div class="modal-meta-label">Source</div>
+              <div class="modal-meta-val">maincourt.com</div>
+            </div>
+            <div class="modal-meta-item">
+              <div class="modal-meta-label">Skill Levels</div>
+              <div class="modal-meta-val">3.5 / 4.0 / 4.5 / 5.0+</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-modal-register">REGISTER →</button>
+          <button class="btn-modal-conflict">⚡ CONFLICT</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- Status bar -->
+<div class="status-bar">
+  <div class="status-indicator">
+    <div class="status-dot"></div>
+    <span>SYSTEM ONLINE</span>
+  </div>
+  <span class="status-sep">|</span>
+  <span>LAST SYNC: 06:00:00 UTC</span>
+  <span class="status-sep">|</span>
+  <span>DB: CONNECTED</span>
+  <span class="status-sep">|</span>
+  <span>PICKLE_TRACKER v2.0.0</span>
+</div>
+
+<script>
+  // ============================================================
+  //  POPUP INTERACTIONS
+  // ============================================================
+  const popupOverlay  = document.getElementById('popupOverlay');
+  const popupPanel    = document.getElementById('popupPanel');
+  const popupRestore  = document.getElementById('popupRestore');
+  const btnYes        = document.getElementById('btnYes');
+  const btnNo         = document.getElementById('btnNo');
+
+  function dismissPopup(label) {
+    // Brief flash before power-down
+    popupPanel.style.filter = 'brightness(2)';
+    setTimeout(() => {
+      popupPanel.classList.add('powering-down');
+      popupOverlay.style.transition = 'opacity 0.5s ease 0.2s';
+      popupOverlay.style.opacity = '0';
+    }, 80);
+
+    setTimeout(() => {
+      popupOverlay.style.display = 'none';
+      popupRestore.classList.add('visible');
+      // Reset for re-play
+      popupPanel.classList.remove('powering-down');
+      popupPanel.style.filter = '';
+    }, 650);
+  }
+
+  function showPopup() {
+    popupOverlay.style.display  = 'flex';
+    popupOverlay.style.opacity  = '0';
+    popupOverlay.style.transition = 'opacity 0.3s ease';
+    popupRestore.classList.remove('visible');
+    // Force reflow
+    void popupOverlay.offsetWidth;
+    popupOverlay.style.opacity  = '1';
+  }
+
+  btnYes.addEventListener('click', () => dismissPopup('CONFIRMED'));
+  btnNo.addEventListener('click',  () => dismissPopup('REMOVED'));
+
+  // ============================================================
+  //  CONFLICT BUTTON INTERACTIONS
+  // ============================================================
+  document.querySelector('.btn-conflict').addEventListener('click', function() {
+    const modal = document.querySelector('.conflict-modal-wrap');
+    modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    modal.querySelector('.conflict-modal').style.boxShadow =
+      '0 0 0 2px var(--amber), 0 0 60px rgba(255,149,0,0.3)';
+    setTimeout(() => {
+      modal.querySelector('.conflict-modal').style.boxShadow = '';
+    }, 1600);
+  });
+
+  // Modal close button
+  document.querySelector('.modal-close').addEventListener('click', function() {
+    const modal = document.querySelector('.conflict-modal');
+    modal.style.transition = 'opacity 0.3s, transform 0.3s';
+    modal.style.opacity = '0';
+    modal.style.transform = 'scaleY(0.02) scaleX(0.8)';
+    modal.style.transformOrigin = 'top center';
+    setTimeout(() => {
+      modal.style.opacity   = '1';
+      modal.style.transform = '';
+    }, 600);
+  });
+</script>
+
+</body>
+</html>
