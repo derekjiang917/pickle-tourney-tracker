@@ -1,8 +1,9 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import connectSqlite3 from 'connect-sqlite3';
-import '../auth/passport.js';
+import './auth/passport.js';
 import passport from 'passport';
 import tournamentRoutes from './routes/tournaments.js';
 import scrapeRoutes from './routes/scrape.js';
