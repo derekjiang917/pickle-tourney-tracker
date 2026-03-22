@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Tournament } from '@/types/tournament';
 import {
   Dialog,
@@ -25,6 +26,7 @@ function getSkillBadgeStyle(level: string): React.CSSProperties {
 
 export function TournamentModal({ tournament, open, onOpenChange }: TournamentModalProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const justClosedLightbox = useRef(false);
 
   useEffect(() => { if (!open) setLightboxOpen(false); }, [open]);
 
@@ -32,10 +34,13 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
     if (!lightboxOpen) return;
     document.body.style.cursor = 'zoom-out';
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightboxOpen(false); };
+    const onUp = () => { justClosedLightbox.current = true; setLightboxOpen(false); setTimeout(() => { justClosedLightbox.current = false; }, 100); };
     window.addEventListener('keydown', onKey);
+    document.addEventListener('pointerup', onUp);
     return () => {
       document.body.style.cursor = '';
       window.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerup', onUp);
     };
   }, [lightboxOpen]);
 
@@ -59,8 +64,13 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(tournament.location)}`;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[900px] p-0 gap-0 overflow-hidden">
+      <DialogContent
+        className="max-w-[900px] p-0 gap-0 overflow-hidden"
+        onPointerDownOutside={(e) => { if (lightboxOpen) e.preventDefault(); }}
+        onInteractOutside={(e) => { if (lightboxOpen) e.preventDefault(); }}
+      >
         <DialogTitle className="sr-only">{tournament.name}</DialogTitle>
         <DialogDescription className="sr-only">Tournament details</DialogDescription>
 
@@ -69,7 +79,7 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
           {tournament.imageUrl && (
             <div
               className="hidden sm:flex w-[360px] flex-shrink-0 border-r border-white/[0.06] overflow-hidden relative group cursor-zoom-in"
-              onClick={() => setLightboxOpen(true)}
+              onClick={() => { if (justClosedLightbox.current) return; setLightboxOpen(true); }}
             >
               <img
                 src={tournament.imageUrl}
@@ -152,42 +162,38 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
           </div>
         </div>
 
-        {/*
-          Lightbox — rendered INSIDE DialogContent (not a portal).
-          Radix checks if the click target is a DOM descendant of DialogContent.
-          Being inside means Radix never sees this as an "outside" click,
-          so the modal stays open. position:fixed escapes overflow:hidden visually.
-        */}
-        {lightboxOpen && tournament.imageUrl && (
-          <div
-            onPointerDown={() => setLightboxOpen(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 9999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(0,0,0,0.92)',
-              cursor: 'zoom-out',
-            }}
-          >
-            <img
-              src={tournament.imageUrl}
-              alt={tournament.name}
-              className="animate-in fade-in-0 zoom-in-90 duration-200"
-              style={{
-                maxHeight: '92vh',
-                maxWidth: '88vw',
-                objectFit: 'contain',
-                borderRadius: '8px',
-                boxShadow: '0 32px 80px rgba(0,0,0,0.8)',
-                pointerEvents: 'none',
-              }}
-            />
-          </div>
-        )}
       </DialogContent>
     </Dialog>
+
+    {lightboxOpen && tournament.imageUrl && createPortal(
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(0,0,0,0.92)',
+          cursor: 'zoom-out',
+        }}
+      >
+        <img
+          src={tournament.imageUrl}
+          alt={tournament.name}
+          className="animate-in fade-in-0 zoom-in-90 duration-200"
+          style={{
+            maxHeight: '92vh',
+            maxWidth: '88vw',
+            objectFit: 'contain',
+            borderRadius: '8px',
+            boxShadow: '0 32px 80px rgba(0,0,0,0.8)',
+            pointerEvents: 'none',
+          }}
+        />
+      </div>,
+      document.body
+    )}
+    </>
   );
 }
