@@ -1,5 +1,7 @@
 import { Tournament } from '@/types/tournament';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSignups } from '@/hooks/useSignups';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TournamentCardProps {
   tournament: Tournament;
@@ -26,6 +28,10 @@ function formatSource(source: string): string {
 }
 
 export function TournamentCard({ tournament, onSelect }: TournamentCardProps) {
+  const { isAuthenticated } = useAuth();
+  const { getStatusForTournament } = useSignups();
+  const status = isAuthenticated ? getStatusForTournament(tournament.id) : null;
+
   const parse = (s: string) => {
     const [y, m, d] = s.split('-');
     return new Date(Number(y), Number(m) - 1, Number(d));
@@ -89,6 +95,16 @@ export function TournamentCard({ tournament, onSelect }: TournamentCardProps) {
         {/* Right: full-height rectangular image */}
         {tournament.imageUrl && (
           <div className="w-28 flex-shrink-0 relative overflow-hidden flex items-center justify-center p-2" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 15%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%)' }}>
+            {status === 'CONFIRMED' && (
+              <span className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-green-500 px-2 py-0.5 text-xs font-semibold text-white shadow">
+                ✓ Registered
+              </span>
+            )}
+            {status === 'PENDING' && (
+              <span className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-yellow-500 px-2 py-0.5 text-xs font-semibold text-white shadow">
+                ⏳ Pending
+              </span>
+            )}
             {/* Blurred background layer */}
             <img src={tournament.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover object-top scale-110" style={{ filter: 'blur(10px)', opacity: 0.5 }} />
             {/* Dark overlay */}

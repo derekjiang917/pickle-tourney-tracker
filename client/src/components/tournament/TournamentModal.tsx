@@ -8,6 +8,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Calendar, MapPin } from 'lucide-react';
+import { RegisterButton } from '@/components/signup/RegisterButton';
 
 interface TournamentModalProps {
   tournament: Tournament | null;
@@ -150,14 +151,11 @@ export function TournamentModal({ tournament, open, onOpenChange }: TournamentMo
             </div>
 
             <div className="px-5 py-4 border-t border-white/[0.06]">
-              <a
-                href={tournament.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center w-full py-2.5 bg-primary text-white text-sm font-semibold rounded-lg hover:opacity-90 transition-opacity"
-              >
-                Register Now →
-              </a>
+              <RegisterButton
+                tournamentId={tournament.id}
+                sourceUrl={tournament.sourceUrl}
+                className="w-full"
+              />
             </div>
           </div>
         </div>
