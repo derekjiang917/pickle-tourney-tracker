@@ -78,26 +78,28 @@ export function TournamentCard({ tournament, onSelect }: TournamentCardProps) {
 
           {/* Status badge + skill badges */}
           {(status || tournament.skillLevels.length > 0) && (
-            <div className="flex flex-wrap items-center gap-1 mt-auto pt-1">
-              {status === 'CONFIRMED' && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow">
-                  ✓ Registered
-                </span>
-              )}
-              {status === 'PENDING' && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow">
-                  ⏳ Pending
-                </span>
-              )}
-              {tournament.skillLevels.map((level) => (
-                <span
-                  key={level}
-                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border"
-                  style={getSkillBadgeStyle(level)}
-                >
-                  {level}
-                </span>
-              ))}
+            <div className="relative mt-auto pt-1">
+              <div className="flex items-center gap-1 overflow-hidden" style={{ maskImage: 'linear-gradient(to right, black 80%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 80%, transparent 100%)' }}>
+                {status === 'CONFIRMED' && (
+                  <span className="flex-shrink-0 inline-flex items-center gap-1 rounded-full bg-green-500 px-1.5 py-0.5 text-[10px] font-semibold text-white shadow">
+                    ✓ Registered
+                  </span>
+                )}
+                {status === 'PENDING' && (
+                  <span className="flex-shrink-0 inline-flex items-center gap-1 rounded-full bg-yellow-500 px-1.5 py-0.5 text-[10px] font-semibold text-white shadow">
+                    ⏳ Pending
+                  </span>
+                )}
+                {tournament.skillLevels.map((level) => (
+                  <span
+                    key={level}
+                    className="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium border"
+                    style={getSkillBadgeStyle(level)}
+                  >
+                    {level}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>

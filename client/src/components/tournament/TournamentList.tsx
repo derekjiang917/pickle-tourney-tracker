@@ -34,6 +34,7 @@ export function TournamentList({
 }: TournamentListProps) {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
+  const [visible, setVisible] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -42,38 +43,56 @@ export function TournamentList({
   const { registrations } = useSignups();
 
   useEffect(() => {
-    const loadTournaments = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const registeredIds = filters.registeredOnly
-          ? registrations.map((r) => r.tournamentId)
-          : undefined;
+    let cancelled = false;
 
-        const apiFilters: TournamentFilters = {
-          location: filters.location || undefined,
-          date: filters.date || undefined,
-          skillLevels: filters.skillLevels.length > 0 ? filters.skillLevels : undefined,
-          upcomingOnly: filters.upcomingOnly,
-          ids: registeredIds,
-        };
-        
-        const response = await fetchTournaments({
-          page: currentPage,
-          limit: ITEMS_PER_PAGE,
-          filters: apiFilters,
-        });
+    const loadTournaments = async () => {
+      const isInitial = tournaments.length === 0;
+
+      if (isInitial) {
+        setLoading(true);
+      } else {
+        setVisible(false);
+      }
+
+      setError(null);
+
+      const registeredIds = filters.registeredOnly
+        ? registrations.map((r) => r.tournamentId)
+        : undefined;
+
+      const apiFilters: TournamentFilters = {
+        location: filters.location || undefined,
+        date: filters.date || undefined,
+        skillLevels: filters.skillLevels.length > 0 ? filters.skillLevels : undefined,
+        upcomingOnly: filters.upcomingOnly,
+        ids: registeredIds,
+      };
+
+      try {
+        // Run fetch and minimum animation delay in parallel so slow fetches
+        // don't add extra latency, but fast fetches still show the transition.
+        const [response] = await Promise.all([
+          fetchTournaments({ page: currentPage, limit: ITEMS_PER_PAGE, filters: apiFilters }),
+          new Promise((resolve) => setTimeout(resolve, isInitial ? 0 : 180)),
+        ]);
+
+        if (cancelled) return;
+
         setTournaments(response.data);
         setTotalPages(response.pagination.totalPages);
         setTotal(response.pagination.total);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load tournaments');
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load tournaments');
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setVisible(true);
+        }
       }
     };
 
-    loadTournaments();
+    void loadTournaments();
+    return () => { cancelled = true; };
   }, [filters, currentPage, registrations]);
 
   if (loading) {
@@ -121,11 +140,14 @@ export function TournamentList({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+        style={{ opacity: visible ? 1 : 0.4, transition: 'opacity 180ms ease' }}
+      >
         {tournaments.map((tournament) => (
-          <TournamentCard 
-            key={tournament.id} 
-            tournament={tournament} 
+          <TournamentCard
+            key={tournament.id}
+            tournament={tournament}
             onSelect={(t) => {
               setSelectedTournament(t);
               setModalOpen(true);
