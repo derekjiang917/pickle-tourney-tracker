@@ -8,7 +8,7 @@ This phase wires up the auth and signup tracking features in the React app. It a
 
 ## Tasks
 
-- [ ] **Create auth context and hook: `client/src/contexts/AuthContext.tsx`**
+- [x] **Create auth context and hook: `client/src/contexts/AuthContext.tsx`**
 
   Create `/home/coole/pickle-tourney-tracker/client/src/contexts/AuthContext.tsx`:
 
@@ -91,7 +91,7 @@ This phase wires up the auth and signup tracking features in the React app. It a
 
   Wrap the app in `AuthProvider` by updating `/home/coole/pickle-tourney-tracker/client/src/main.tsx` (or wherever the root render is). Import `AuthProvider` and wrap `<App />` with it.
 
-- [ ] **Create signup tracking hook: `client/src/hooks/useSignups.ts`**
+- [x] **Create signup tracking hook: `client/src/hooks/useSignups.ts`**
 
   Create `/home/coole/pickle-tourney-tracker/client/src/hooks/useSignups.ts`:
 
@@ -211,7 +211,7 @@ This phase wires up the auth and signup tracking features in the React app. It a
   }
   ```
 
-- [ ] **Add login button and user avatar to header: update `DashboardLayout.tsx`**
+- [x] **Add login button and user avatar to header: update `DashboardLayout.tsx`**
 
   Read `/home/coole/pickle-tourney-tracker/client/src/components/layout/DashboardLayout.tsx`.
 
@@ -234,7 +234,7 @@ This phase wires up the auth and signup tracking features in the React app. It a
 
   Keep the style changes minimal — just add the auth area to the existing header. Use `useAuth()` for `user`, `isLoading`, `login`, `logout`.
 
-- [ ] **Create RegistrationConfirmPopup component: `client/src/components/signup/RegistrationConfirmPopup.tsx`**
+- [x] **Create RegistrationConfirmPopup component: `client/src/components/signup/RegistrationConfirmPopup.tsx`**
 
   Create `/home/coole/pickle-tourney-tracker/client/src/components/signup/RegistrationConfirmPopup.tsx`.
 
@@ -260,7 +260,7 @@ This phase wires up the auth and signup tracking features in the React app. It a
   - Import `Dialog`, `DialogContent`, `DialogTitle`, `DialogDescription` from `@/components/ui/dialog`
   - Import the `Registration` type from `@/hooks/useSignups`
 
-- [ ] **Create RegisterButton component: `client/src/components/signup/RegisterButton.tsx`**
+- [x] **Create RegisterButton component: `client/src/components/signup/RegisterButton.tsx`**
 
   Create `/home/coole/pickle-tourney-tracker/client/src/components/signup/RegisterButton.tsx`.
 
@@ -302,7 +302,7 @@ This phase wires up the auth and signup tracking features in the React app. It a
 
   Use `useAuth` and `useSignups` hooks. Import `Button` from `@/components/ui/button`.
 
-- [ ] **Add registered badge to TournamentCard: update `TournamentCard.tsx`**
+- [x] **Add registered badge to TournamentCard: update `TournamentCard.tsx`**
 
   Read `/home/coole/pickle-tourney-tracker/client/src/components/tournament/TournamentCard.tsx`.
 
@@ -330,7 +330,7 @@ This phase wires up the auth and signup tracking features in the React app. It a
   Pending: "absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-yellow-500 px-2 py-0.5 text-xs font-semibold text-white shadow"
   ```
 
-- [ ] **Wire up RegisterButton in TournamentModal and wire RegistrationConfirmPopup in App**
+- [x] **Wire up RegisterButton in TournamentModal and wire RegistrationConfirmPopup in App**
 
   1. Read `/home/coole/pickle-tourney-tracker/client/src/components/tournament/TournamentModal.tsx`.
      - Find the existing "Register" button/link.

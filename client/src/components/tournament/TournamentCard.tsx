@@ -76,9 +76,19 @@ export function TournamentCard({ tournament, onSelect }: TournamentCardProps) {
             </div>
           </div>
 
-          {/* Skill badges */}
-          {tournament.skillLevels.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-auto pt-1">
+          {/* Status badge + skill badges */}
+          {(status || tournament.skillLevels.length > 0) && (
+            <div className="flex flex-wrap items-center gap-1 mt-auto pt-1">
+              {status === 'CONFIRMED' && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow">
+                  ✓ Registered
+                </span>
+              )}
+              {status === 'PENDING' && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-yellow-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow">
+                  ⏳ Pending
+                </span>
+              )}
               {tournament.skillLevels.map((level) => (
                 <span
                   key={level}
@@ -95,16 +105,6 @@ export function TournamentCard({ tournament, onSelect }: TournamentCardProps) {
         {/* Right: full-height rectangular image */}
         {tournament.imageUrl && (
           <div className="w-28 flex-shrink-0 relative overflow-hidden flex items-center justify-center p-2" style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 15%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 15%)' }}>
-            {status === 'CONFIRMED' && (
-              <span className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-green-500 px-2 py-0.5 text-xs font-semibold text-white shadow">
-                ✓ Registered
-              </span>
-            )}
-            {status === 'PENDING' && (
-              <span className="absolute top-2 right-2 z-10 flex items-center gap-1 rounded-full bg-yellow-500 px-2 py-0.5 text-xs font-semibold text-white shadow">
-                ⏳ Pending
-              </span>
-            )}
             {/* Blurred background layer */}
             <img src={tournament.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover object-top scale-110" style={{ filter: 'blur(10px)', opacity: 0.5 }} />
             {/* Dark overlay */}
@@ -127,7 +127,7 @@ export function TournamentCard({ tournament, onSelect }: TournamentCardProps) {
           onClick={(e) => e.stopPropagation()}
           className="text-xs font-medium text-primary bg-primary/10 border border-primary/20 rounded-md px-3 py-1 hover:bg-primary/20 transition-colors whitespace-nowrap"
         >
-          Sign Up →
+          {status ? 'Visit Site →' : 'Sign Up →'}
         </a>
       </div>
     </div>

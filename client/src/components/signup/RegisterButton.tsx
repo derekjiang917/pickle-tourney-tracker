@@ -75,13 +75,23 @@ export function RegisterButton({ tournamentId, sourceUrl, className }: Props) {
   // Pending
   if (status === 'PENDING') {
     return (
-      <Button
-        disabled
-        title="We'll ask you to confirm next time you visit"
-        className={`w-full bg-muted text-muted-foreground font-medium cursor-default ${className ?? ''}`}
-      >
-        <span className="mr-1.5">⏳</span> Registered (pending)
-      </Button>
+      <div className="flex flex-col items-center gap-1.5">
+        <Button
+          disabled
+          title="We'll ask you to confirm next time you visit"
+          className={`w-full bg-muted text-muted-foreground font-medium cursor-default ${className ?? ''}`}
+        >
+          <span className="mr-1.5">⏳</span> Registered (pending)
+        </Button>
+        <a
+          href={sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-primary hover:underline"
+        >
+          Visit site →
+        </a>
+      </div>
     );
   }
 
