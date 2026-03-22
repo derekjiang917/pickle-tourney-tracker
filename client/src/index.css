@@ -25,6 +25,18 @@
   --font-sans: 'DM Sans', system-ui, sans-serif;
 }
 
+@keyframes pickle-spin {
+  0%   { transform: rotate(0deg)   scale(1);    }
+  40%  { transform: rotate(288deg) scale(1.4);  }
+  50%  { transform: rotate(360deg) scale(1.45); }
+  60%  { transform: rotate(432deg) scale(1.4);  }
+  100% { transform: rotate(720deg) scale(1);    }
+}
+
+.pickle-spin {
+  animation: pickle-spin 0.65s linear forwards;
+}
+
 @layer base {
   * {
     @apply border-border;

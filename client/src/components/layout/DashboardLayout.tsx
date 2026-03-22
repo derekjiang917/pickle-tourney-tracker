@@ -21,7 +21,13 @@ export function DashboardLayout({
   lastUpdated,
 }: DashboardLayoutProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [pickleSpinning, setPickleSpinning] = useState(false);
   const { user, isLoading: authLoading, login, logout } = useAuth();
+
+  const handlePickleClick = () => {
+    if (pickleSpinning) return;
+    setPickleSpinning(true);
+  };
 
   const hasActiveFilters =
     filters.location || filters.date || filters.skillLevels.length > 0 || !filters.upcomingOnly;
@@ -61,7 +67,11 @@ export function DashboardLayout({
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
           {/* Logo */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-base leading-none select-none shadow-[0_0_0_1px_hsl(var(--primary)/0.3),0_4px_12px_hsl(var(--primary)/0.2)]">
+            <div
+              className={`w-8 h-8 rounded-full bg-primary flex items-center justify-center text-base leading-none select-none shadow-[0_0_0_1px_hsl(var(--primary)/0.3),0_4px_12px_hsl(var(--primary)/0.2)] cursor-pointer${pickleSpinning ? ' pickle-spin' : ''}`}
+              onClick={handlePickleClick}
+              onAnimationEnd={() => setPickleSpinning(false)}
+            >
               🥒
             </div>
             <h1 className="text-base font-medium text-foreground/90 tracking-tight">
