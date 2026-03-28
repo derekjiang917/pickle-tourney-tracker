@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { ScrapedTournament, Scraper } from './types.js';
 import {
   parseDate,
-  parseSkillLevels,
+  ALL_SKILL_LEVELS,
   extractCityState,
   sanitizeString,
   createTournament,
@@ -16,6 +16,9 @@ const MAX_PAGES = 20;
 
 export const SOURCE_NAME_PICKLEBALLTOURNAMENTS = SOURCE_NAME;
 export const BASE_URL_PICKLEBALLTOURNAMENTS = BASE_URL;
+
+// PBT site caps at 5.5 — exclude 6.0 from "And Above" expansions
+const PBT_SKILL_LEVELS = ALL_SKILL_LEVELS.filter((level) => parseFloat(level) <= 5.5);
 
 export function parsePBTListDate(text: string): { startDate: string | null; endDate: string | null } {
   const result = { startDate: null as string | null, endDate: null as string | null };
@@ -36,6 +39,47 @@ export function parsePBTListDate(text: string): { startDate: string | null; endD
   }
 
   return result;
+}
+
+/**
+ * Extract skill levels from a single PBT event title.
+ * e.g. "Mens Doubles Skill: (3.5) Age: (Any)" → ["3.5"]
+ *      "Womens Doubles Skill: (4.5 And Above) Age: (Any)" → ["4.5", "5.0", "5.5"]
+ *      "Mens Doubles OPEN Cash Prize: (Any) Age: (Any)" → all skill levels (2.5–5.5)
+ */
+export function extractPBTEventSkillLevel(titleText: string): string[] {
+  // Extract only the Skill: (...) portion to avoid matching Age: (...)
+  const skillMatch = titleText.match(/Skill:\s*\(([^)]+)\)/i);
+
+  if (!skillMatch) {
+    // No Skill: found — check if "OPEN" appears before any "Age:" text
+    const beforeAge = titleText.split(/Age:/i)[0];
+    if (/\bOPEN\b/i.test(beforeAge)) {
+      return [...PBT_SKILL_LEVELS];
+    }
+    return [];
+  }
+
+  const skillValue = skillMatch[1].trim();
+
+  if (skillValue.toLowerCase() === 'any') {
+    return [...PBT_SKILL_LEVELS];
+  }
+
+  // "4.5 And Above" → expand to 4.5, 5.0, 5.5
+  const andAboveMatch = skillValue.match(/([\d.]+)\s+And\s+Above/i);
+  if (andAboveMatch) {
+    const baseLevel = parseFloat(andAboveMatch[1]);
+    return PBT_SKILL_LEVELS.filter((level) => parseFloat(level) >= baseLevel);
+  }
+
+  // Plain numeric value like "3.0"
+  const numericMatch = skillValue.match(/^[\d.]+$/);
+  if (numericMatch) {
+    return [skillValue];
+  }
+
+  return [];
 }
 
 async function fetchPickleballTournamentsListPage(url: string): Promise<cheerio.Root> {
@@ -78,11 +122,193 @@ async function fetchPickleballTournamentsListPage(url: string): Promise<cheerio.
   throw lastError || new Error('Failed to fetch page after retries');
 }
 
+export async function scrapePickleballTournamentPage(
+  url: string
+): Promise<ScrapedTournament | null> {
+  try {
+    const $ = await fetchHtmlWithRetry(url);
+
+    // Name: first non-empty h1
+    const name = sanitizeString(
+      $('h1')
+        .filter((_, el) => $(el).text().trim().length > 0)
+        .first()
+        .text()
+    );
+
+    if (!name) {
+      return null;
+    }
+
+    // Description: find sections with h1.text-blue-600 headings
+    const descriptionSections = [
+      'Tournament Description',
+      'Additional Information',
+      'Refund Policy',
+      'Prize Money',
+    ];
+    const sections: string[] = [];
+
+    $('h1.text-blue-600').each((_, el) => {
+      const sectionTitle = $(el).text().trim();
+      if (!descriptionSections.includes(sectionTitle)) return;
+
+      // Content is in sibling div#details-content or div with whitespace-pre-line class
+      const contentDiv = $(el)
+        .siblings('div#details-content, div.whitespace-pre-line')
+        .first();
+
+      const paragraphs: string[] = [];
+      contentDiv.find('div.mb-4').each((_, p) => {
+        const text = sanitizeString($(p).text());
+        if (text) paragraphs.push(text);
+      });
+
+      const content = paragraphs.join('\n\n');
+      if (content) {
+        sections.push(`## ${sectionTitle}\n${content}`);
+      }
+    });
+
+    const description = sections.length > 0 ? sections.join('\n\n') : undefined;
+
+    // Location: extract from Google Maps link q= parameter
+    let location = '';
+    let city = '';
+    let state = '';
+
+    const mapsLink = $('a[href*="google.com/maps"]').first();
+    if (mapsLink.length) {
+      const href = mapsLink.attr('href') || '';
+      try {
+        const urlObj = new URL(href);
+        const q = urlObj.searchParams.get('q');
+        if (q) {
+          location = q;
+          const extracted = extractCityState(location);
+          city = extracted.city;
+          state = extracted.state;
+        }
+      } catch {
+        // URL parse failed — location stays empty
+      }
+    }
+
+    // Registration URL
+    let registrationUrl: string | undefined;
+    const registerLink = $('a[aria-label="Link to Register for the Tournament"]').first();
+    if (registerLink.length) {
+      registrationUrl = registerLink.attr('href') || undefined;
+    }
+
+    // Image: first img with object-contain class, preferring pickleballbrackets CDN
+    let imageUrl: string | undefined =
+      $('img[src*="pickleballbrackets.com"]').first().attr('src') ||
+      $('img.object-contain').first().attr('src');
+
+    // Dates: look for text matching a date range near a calendar icon, then fall back to page scan
+    let startDate = '';
+    let endDate = '';
+
+    const fullDateRange =
+      /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}\s+[-–]\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}/;
+    const singleDate =
+      /(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}/;
+
+    // Try calendar icon parent first
+    const calendarParent = $('[data-icon="calendar-days"]').closest('div').parent();
+    if (calendarParent.length) {
+      const calText = calendarParent.text().trim();
+      const match = calText.match(fullDateRange);
+      if (match) {
+        const dates = parsePBTListDate(match[0]);
+        if (dates.startDate) {
+          startDate = dates.startDate;
+          endDate = dates.endDate || dates.startDate;
+        }
+      }
+    }
+
+    // Fallback: scan divs/spans for date range text
+    if (!startDate) {
+      $('div, span, p').each((_, el) => {
+        if (startDate) return;
+        const ownText = $(el).clone().children().remove().end().text().trim();
+        const match = ownText.match(fullDateRange);
+        if (match) {
+          const dates = parsePBTListDate(match[0]);
+          if (dates.startDate) {
+            startDate = dates.startDate;
+            endDate = dates.endDate || dates.startDate;
+          }
+        }
+      });
+    }
+
+    // Last resort: any single date
+    if (!startDate) {
+      $('div, span, p').each((_, el) => {
+        if (startDate) return;
+        const ownText = $(el).clone().children().remove().end().text().trim();
+        const match = ownText.match(singleDate);
+        if (match) {
+          const dates = parsePBTListDate(match[0]);
+          if (dates.startDate) {
+            startDate = dates.startDate;
+            endDate = dates.startDate;
+          }
+        }
+      });
+    }
+
+    return createTournament(SOURCE_NAME, {
+      name,
+      sourceUrl: url,
+      location,
+      city,
+      state,
+      startDate,
+      endDate,
+      skillLevels: [],
+      description,
+      imageUrl,
+      registrationUrl,
+    });
+  } catch (error) {
+    console.error(`Error scraping tournament page ${url}:`, error);
+    return null;
+  }
+}
+
+export async function scrapePickleballTournamentEvents(tournamentUrl: string): Promise<string[]> {
+  try {
+    const base = tournamentUrl.replace(/\/$/, '');
+    const eventsUrl = `${base}/events`;
+
+    const $ = await fetchHtmlWithRetry(eventsUrl);
+
+    const skillLevels = new Set<string>();
+
+    $('div.text-base.font-bold.text-gray-900').each((_, el) => {
+      const titleText = $(el).text().trim();
+      const levels = extractPBTEventSkillLevel(titleText);
+      levels.forEach((level) => skillLevels.add(level));
+    });
+
+    return [...skillLevels];
+  } catch (error) {
+    console.warn(`Warning: could not load events page for ${tournamentUrl}:`, error);
+    return [];
+  }
+}
+
 export async function scrapePickleballTournaments(): Promise<ScrapedTournament[]> {
   const tournaments: ScrapedTournament[] = [];
   const seenUrls = new Set<string>();
+  const tournamentUrls: string[] = [];
 
   try {
+    // Phase 1: collect tournament URLs from list pages
     for (let page = 1; page <= MAX_PAGES; page++) {
       const url = `${BASE_URL}/search?zoom_level=7&current_page=${page}&show_all=true&tournament_filter=local`;
       console.log(`Scraping page ${page}: ${url}`);
@@ -109,141 +335,31 @@ export async function scrapePickleballTournaments(): Promise<ScrapedTournament[]
         const sourceUrl = href.startsWith('http') ? href : `${BASE_URL}${href}`;
         if (seenUrls.has(sourceUrl)) return;
         seenUrls.add(sourceUrl);
-
-        // Name: title attr on the name div, or its text content
-        const nameEl = card.find('div[class*="line-clamp-2"][class*="font-medium"]');
-        const name = sanitizeString(nameEl.attr('title') || nameEl.text());
-
-        if (!name) {
-          console.log(`Skipping card with no name at: ${sourceUrl}`);
-          return;
-        }
-
-        // Location
-        const locationEl = card.find('div.line-clamp-1.text-sm.text-gray-600');
-        const locationText = sanitizeString(locationEl.text());
-        const { city, state } = extractCityState(locationText);
-
-        // Dates
-        const dateEl = card.find('div.text-sm.line-clamp-1.text-gray-700');
-        const dateText = sanitizeString(dateEl.text());
-        const { startDate, endDate } = parsePBTListDate(dateText);
-
-        // Image
-        const imageUrl = card.find('img').first().attr('src');
-
-        tournaments.push(
-          createTournament(SOURCE_NAME, {
-            name,
-            sourceUrl,
-            location: locationText,
-            city,
-            state,
-            startDate: startDate || '',
-            endDate: endDate || startDate || '',
-            skillLevels: [],
-            imageUrl,
-          })
-        );
+        tournamentUrls.push(sourceUrl);
       });
 
-      console.log(`Page ${page}: ${tournaments.length} tournaments accumulated`);
+      console.log(`Page ${page}: ${tournamentUrls.length} tournament URLs accumulated`);
+    }
+
+    // Phase 2: scrape detail page + events page per tournament
+    for (const url of tournamentUrls) {
+      console.log(`Scraping detail page: ${url}`);
+      const tournament = await scrapePickleballTournamentPage(url);
+      if (!tournament) {
+        console.warn(`Skipping ${url} — detail page returned null`);
+        continue;
+      }
+
+      const eventSkillLevels = await scrapePickleballTournamentEvents(url);
+      tournament.skillLevels = [...new Set([...tournament.skillLevels, ...eventSkillLevels])];
+
+      tournaments.push(tournament);
     }
   } catch (error) {
     console.error('Error in pickleballtournaments scraper:', error);
   }
 
   return tournaments;
-}
-
-export async function scrapePickleballTournamentPage(
-  url: string
-): Promise<ScrapedTournament | null> {
-  try {
-    const $ = await fetchHtmlWithRetry(url);
-
-    const name =
-      sanitizeString($('h1').first().text()) ||
-      sanitizeString($('[class*="text-3xl"]').text()) ||
-      sanitizeString($('title').text().split('|')[0]);
-
-    if (!name) {
-      return null;
-    }
-
-    let location = '';
-    let city = '';
-    let state = '';
-
-    const locationSelectors = [
-      '[class*="venue"] a',
-      '[class*="location"]',
-      '[class*="Where"]',
-      'span:contains("Where")',
-    ];
-
-    for (const selector of locationSelectors) {
-      const locationText = $(selector).first().text().trim();
-      if (locationText && locationText.length > 2) {
-        location = locationText;
-        const { city: c, state: s } = extractCityState(location);
-        city = c;
-        state = s;
-        break;
-      }
-    }
-
-    let startDate = '';
-    let endDate = '';
-
-    const dateSelectors = ['[class*="date"]', 'span:contains("202")', '[class*="When"]'];
-
-    for (const selector of dateSelectors) {
-      const dateText = $(selector).first().text().trim();
-      const dates = parsePBTListDate(dateText);
-      if (dates.startDate) {
-        startDate = dates.startDate;
-        endDate = dates.endDate || dates.startDate;
-        break;
-      }
-    }
-
-    let registrationUrl: string | undefined;
-    const registerBtn = $(
-      'a:contains("Register"), [class*="Register"] a, button:contains("Register")'
-    );
-    if (registerBtn.length > 0) {
-      const href = registerBtn.attr('href');
-      if (href) {
-        registrationUrl = href.startsWith('http') ? href : `${BASE_URL}${href}`;
-      }
-    }
-
-    const skillLevels: string[] = [];
-    const pageText = $('body').text();
-    const extractedSkills = parseSkillLevels(pageText);
-    skillLevels.push(...extractedSkills);
-
-    const description =
-      sanitizeString($('[class*="description"], [class*="About"]').first().text()) ||
-      sanitizeString($('meta[name="description"]').attr('content'));
-
-    return createTournament(SOURCE_NAME, {
-      name,
-      sourceUrl: url,
-      location,
-      city,
-      state,
-      startDate,
-      endDate,
-      skillLevels: [...new Set(skillLevels)],
-      description,
-      registrationUrl,
-    });
-  } catch (error) {
-    console.error(`Error scraping tournament page ${url}:`, error);
-    return null;
-  }
 }
 
 export const pickleballTournamentsScraper: Scraper = {

@@ -146,6 +146,7 @@ export async function upsertTournaments(tournaments: ScrapedTournamentInput[]): 
           endDate: tournament.endDate,
           description: tournament.description,
           imageUrl: tournament.imageUrl,
+          registrationUrl: tournament.registrationUrl,
         };
 
         await tx.tournament.upsert({
