@@ -6,11 +6,7 @@ import {
   parseMaincourtJsonTournament,
   extractMaincourtJsonData,
 } from '../maincourt.js';
-import {
-  extractPickleballTournamentsDates,
-  parsePickleballTournamentJson,
-  extractPickleballTournamentsJsonData,
-} from '../pickleballtournaments.js';
+import { parsePBTListDate } from '../pickleballtournaments.js';
 
 const MAINCOURT_LIST_PAGE_HTML = `
 <!DOCTYPE html>
@@ -312,28 +308,8 @@ describe('Maincourt Integration Tests', () => {
 });
 
 describe('PickleballTournaments Integration Tests', () => {
-  describe('JSON Data Extraction', () => {
-    it('returns empty object when no JSON data is present', () => {
-      const $ = cheerio.load(PICKLEBALL_TOURNAMENTS_LIST_HTML);
-      const result = extractPickleballTournamentsJsonData($);
-      expect(result.tournaments).toBeUndefined();
-    });
-
-    it('can parse tournament from raw JSON object directly', () => {
-      const tournamentData = {
-        name: 'Test Tournament',
-        url: '/tournament/test',
-        startDate: '2024-01-01',
-        endDate: '2024-01-02',
-        city: 'Portland',
-        state: 'OR',
-      };
-      const result = parsePickleballTournamentJson(tournamentData);
-      expect(result).not.toBeNull();
-      expect(result?.name).toBe('Test Tournament');
-    });
-
-    it('extracts tournament data from detail page', () => {
+  describe('List Page HTML Parsing', () => {
+    it('extracts tournament data from detail page HTML', () => {
       const $ = cheerio.load(PICKLEBALL_TOURNAMENT_PAGE_HTML);
 
       const title = $('.tournament-title').text();
@@ -350,72 +326,30 @@ describe('PickleballTournaments Integration Tests', () => {
       expect(skills).toContain('3.5');
       expect(skills).toContain('4.0');
     });
-
-    it('handles missing JSON data gracefully', async () => {
-      const htmlNoJson = `
-        <html>
-          <body>
-            <div class="tournament-list">No tournaments</div>
-          </body>
-        </html>
-      `;
-
-      const $ = cheerio.load(htmlNoJson);
-      const result = extractPickleballTournamentsJsonData($);
-
-      expect(result.tournaments).toBeUndefined();
-    });
   });
 
   describe('Date Parsing Integration', () => {
-    it('parses dates from page content', () => {
+    it('parses dates from page content using parsePBTListDate', () => {
       const $ = cheerio.load(PICKLEBALL_TOURNAMENT_PAGE_HTML);
 
-      const datesText = $('.dates').text();
-      const dates = extractPickleballTournamentsDates(datesText);
+      const datesText = $('.dates').text().trim();
+      const dates = parsePBTListDate(datesText);
 
       expect(dates.startDate).not.toBeNull();
       expect(dates.endDate).not.toBeNull();
     });
 
-    it('parses various date formats', () => {
+    it('parses various date formats with parsePBTListDate', () => {
       const testCases = [
-        { input: 'July 20, 2024 - July 21, 2024', expectedStart: '2024-07-20', expectedEnd: '2024-07-21' },
-        { input: '12/01/2024 - 12/02/2024', expectedStart: '2024-12-01', expectedEnd: '2024-12-02' },
+        { input: 'Jul 20, 2024 - Jul 21, 2024', expectedStart: '2024-07-20', expectedEnd: '2024-07-21' },
+        { input: 'Apr 10, 2026 - Apr 12, 2026', expectedStart: '2026-04-10', expectedEnd: '2026-04-12' },
       ];
 
       testCases.forEach(({ input, expectedStart, expectedEnd }) => {
-        const result = extractPickleballTournamentsDates(input);
+        const result = parsePBTListDate(input);
         expect(result.startDate).toBe(expectedStart);
         expect(result.endDate).toBe(expectedEnd);
       });
-    });
-  });
-
-  describe('Tournament Parsing Integration', () => {
-    it('parses tournament from JSON object', () => {
-      const tournamentData = {
-        name: 'Summer Slam',
-        url: '/tournament/summer-slam',
-        startDate: '2024-07-20',
-        endDate: '2024-07-21',
-        venue: 'Beach Courts',
-        city: 'San Diego',
-        state: 'CA',
-      };
-
-      const result = parsePickleballTournamentJson(tournamentData);
-
-      expect(result).not.toBeNull();
-      expect(result?.name).toBe('Summer Slam');
-      expect(result?.city).toBe('San Diego');
-      expect(result?.state).toBe('CA');
-    });
-
-    it('handles invalid tournament data', () => {
-      expect(parsePickleballTournamentJson(null)).toBeNull();
-      expect(parsePickleballTournamentJson('string')).toBeNull();
-      expect(parsePickleballTournamentJson({})).toBeNull();
     });
   });
 });
@@ -480,22 +414,11 @@ describe('End-to-End Scraping Flow Simulation', () => {
   });
 
   describe('PickleballTournaments Full Flow', () => {
-    it('parses tournament JSON data correctly', () => {
-      const tournamentData = {
-        name: 'JSON Tournament 1',
-        url: '/tournament/json-1',
-        startDate: '2024-03-01',
-        endDate: '2024-03-02',
-        venue: 'Community Center',
-        city: 'Portland',
-        state: 'OR',
-      };
-
-      const parsed = parsePickleballTournamentJson(tournamentData);
-      expect(parsed).not.toBeNull();
-      expect(parsed?.name).toBe('JSON Tournament 1');
-      expect(parsed?.city).toBe('Portland');
-      expect(parsed?.state).toBe('OR');
+    it('parses list page date ranges correctly', () => {
+      const dateStr = 'Mar 01, 2024 - Mar 02, 2024';
+      const parsed = parsePBTListDate(dateStr);
+      expect(parsed.startDate).toBe('2024-03-01');
+      expect(parsed.endDate).toBe('2024-03-02');
     });
   });
 

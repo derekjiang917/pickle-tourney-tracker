@@ -6,119 +6,154 @@ import {
   extractCityState,
   sanitizeString,
   createTournament,
+  DEFAULT_USER_AGENT,
 } from './utils.js';
-import { fetchHtmlWithRetry } from './puppeteer.js';
+import { launchBrowser, fetchHtmlWithRetry } from './puppeteer.js';
 
 const SOURCE_NAME = 'pickleballtournaments.com';
 const BASE_URL = 'https://pickleballtournaments.com';
+const MAX_PAGES = 20;
 
 export const SOURCE_NAME_PICKLEBALLTOURNAMENTS = SOURCE_NAME;
 export const BASE_URL_PICKLEBALLTOURNAMENTS = BASE_URL;
 
+export function parsePBTListDate(text: string): { startDate: string | null; endDate: string | null } {
+  const result = { startDate: null as string | null, endDate: null as string | null };
+
+  const trimmed = text?.trim();
+  if (!trimmed) return result;
+
+  // Split on " - " or " – " (en-dash), with optional surrounding whitespace
+  const parts = trimmed.split(/\s+[-–]\s+/);
+
+  if (parts.length >= 2) {
+    result.startDate = parseDate(parts[0].trim());
+    result.endDate = parseDate(parts[parts.length - 1].trim());
+  } else {
+    // Single date (no range separator found)
+    result.startDate = parseDate(trimmed);
+    result.endDate = result.startDate;
+  }
+
+  return result;
+}
+
+async function fetchPickleballTournamentsListPage(url: string): Promise<cheerio.Root> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const browser = await launchBrowser();
+    try {
+      const page = await browser.newPage();
+      await page.setUserAgent(DEFAULT_USER_AGENT);
+      await page.goto(url, { waitUntil: 'load', timeout: 60000 });
+
+      try {
+        await page.waitForSelector('a.block[href*="/tournaments/"]', { timeout: 15000 });
+      } catch {
+        console.log('Tournament card links not found within timeout, continuing with current content');
+      }
+
+      try {
+        await page.waitForFunction(
+          'document.body.textContent && document.body.textContent.includes("results found")',
+          { timeout: 10000 }
+        );
+      } catch {
+        // Page may not show results count — continue anyway
+      }
+
+      const html = await page.content();
+      return cheerio.load(html);
+    } catch (error) {
+      lastError = error as Error;
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 3000 * attempt));
+      }
+    } finally {
+      await browser.close();
+    }
+  }
+
+  throw lastError || new Error('Failed to fetch page after retries');
+}
+
 export async function scrapePickleballTournaments(): Promise<ScrapedTournament[]> {
   const tournaments: ScrapedTournament[] = [];
+  const seenUrls = new Set<string>();
 
   try {
-    const baseUrl =
-      'https://pickleballtournaments.com/search?tournament_filter=now_registering&show_all=true&zoom_level=7';
-    const maxPages = 5;
-
-    for (let page = 1; page <= maxPages; page++) {
-      const url = `${baseUrl}&current_page=${page}`;
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const url = `${BASE_URL}/search?zoom_level=7&current_page=${page}&show_all=true&tournament_filter=local`;
       console.log(`Scraping page ${page}: ${url}`);
 
       const $ = await fetchPickleballTournamentsListPage(url);
+      const cards = $('a.block[href*="/tournaments/"]');
+      console.log(`Found ${cards.length} tournament cards on page ${page}`);
 
-      const tournamentCards = $('[class*="cursor-pointer"][href*="/tournaments/"]');
-      console.log(`Found ${tournamentCards.length} tournament card elements on page ${page}`);
-
-      if (tournamentCards.length > 0) {
-        const seenUrls = new Set<string>();
-
-        tournamentCards.each((_, element) => {
-          const href = $(element).attr('href');
-          if (href && href.includes('/tournaments/') && href !== '/tournaments') {
-            const fullUrl = href.startsWith('http') ? href : `${BASE_URL}${href}`;
-            if (!seenUrls.has(fullUrl)) {
-              seenUrls.add(fullUrl);
-            }
-          }
-        });
-
-        console.log(`Found ${seenUrls.size} unique tournament URLs`);
-
-        for (const url of Array.from(seenUrls)) {
-          try {
-            const tournament = await scrapePickleballTournamentPage(url);
-            if (tournament) {
-              tournaments.push(tournament);
-            }
-          } catch (error) {
-            console.error(`Error scraping tournament ${url}:`, error);
-          }
+      if (cards.length === 0) {
+        const bodyText = $('body').text();
+        if (bodyText.includes('No Tournaments')) {
+          console.log('No Tournaments text found — pagination exhausted');
+        } else {
+          console.log('No cards found and no "No Tournaments" text — stopping pagination');
         }
+        break;
       }
 
-      const jsonData = extractPickleballTournamentsJsonData($);
-      console.log('JSON data found:', Object.keys(jsonData));
-      if (jsonData.tournaments && Array.isArray(jsonData.tournaments)) {
-        console.log(`Found ${jsonData.tournaments.length} tournaments in JSON`);
-        for (const t of jsonData.tournaments) {
-          const tournament = parsePickleballTournamentJson(t);
-          if (tournament) {
-            tournaments.push(tournament);
-          }
+      cards.each((_, el) => {
+        const card = $(el);
+        const href = card.attr('href');
+        if (!href || !href.includes('/tournaments/')) return;
+
+        const sourceUrl = href.startsWith('http') ? href : `${BASE_URL}${href}`;
+        if (seenUrls.has(sourceUrl)) return;
+        seenUrls.add(sourceUrl);
+
+        // Name: title attr on the name div, or its text content
+        const nameEl = card.find('div[class*="line-clamp-2"][class*="font-medium"]');
+        const name = sanitizeString(nameEl.attr('title') || nameEl.text());
+
+        if (!name) {
+          console.log(`Skipping card with no name at: ${sourceUrl}`);
+          return;
         }
-      }
+
+        // Location
+        const locationEl = card.find('div.line-clamp-1.text-sm.text-gray-600');
+        const locationText = sanitizeString(locationEl.text());
+        const { city, state } = extractCityState(locationText);
+
+        // Dates
+        const dateEl = card.find('div.text-sm.line-clamp-1.text-gray-700');
+        const dateText = sanitizeString(dateEl.text());
+        const { startDate, endDate } = parsePBTListDate(dateText);
+
+        // Image
+        const imageUrl = card.find('img').first().attr('src');
+
+        tournaments.push(
+          createTournament(SOURCE_NAME, {
+            name,
+            sourceUrl,
+            location: locationText,
+            city,
+            state,
+            startDate: startDate || '',
+            endDate: endDate || startDate || '',
+            skillLevels: [],
+            imageUrl,
+          })
+        );
+      });
+
+      console.log(`Page ${page}: ${tournaments.length} tournaments accumulated`);
     }
   } catch (error) {
     console.error('Error in pickleballtournaments scraper:', error);
   }
 
   return tournaments;
-}
-
-async function fetchPickleballTournamentsListPage(
-  url: string
-): Promise<cheerio.Root> {
-  let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const browser = await import('puppeteer').then((p) => p.default.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      }));
-      try {
-        const page = await browser.newPage();
-        await page.setUserAgent(
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        );
-        await page.goto(url, { waitUntil: 'load', timeout: 60000 });
-
-        try {
-          await page.waitForSelector(
-            '[class*="tournament"], a[href*="/tournaments/"], [data-testid*="tournament"]',
-            { timeout: 15000 }
-          );
-        } catch {
-          console.log('Tournament elements not found, continuing with whatever loaded');
-        }
-
-        const html = await page.content();
-        return cheerio.load(html);
-      } finally {
-        await browser.close();
-      }
-    } catch (error) {
-      lastError = error as Error;
-      if (attempt < 3) {
-        await new Promise((resolve) => setTimeout(resolve, 3000 * attempt));
-      }
-    }
-  }
-
-  throw lastError || new Error('Failed to fetch page after retries');
 }
 
 export async function scrapePickleballTournamentPage(
@@ -165,30 +200,11 @@ export async function scrapePickleballTournamentPage(
 
     for (const selector of dateSelectors) {
       const dateText = $(selector).first().text().trim();
-      const dates = extractPickleballTournamentsDates(dateText);
+      const dates = parsePBTListDate(dateText);
       if (dates.startDate) {
         startDate = dates.startDate;
         endDate = dates.endDate || dates.startDate;
         break;
-      }
-    }
-
-    const dateFromPage = $('text')
-      .filter((_, el) => {
-        const text = $(el).text();
-        return (
-          /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/.test(text) ||
-          /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}/i.test(text)
-        );
-      })
-      .first()
-      .text();
-
-    if (dateFromPage) {
-      const dates = extractPickleballTournamentsDates(dateFromPage);
-      if (dates.startDate) {
-        startDate = dates.startDate;
-        endDate = dates.endDate || dates.startDate;
       }
     }
 
@@ -228,141 +244,6 @@ export async function scrapePickleballTournamentPage(
     console.error(`Error scraping tournament page ${url}:`, error);
     return null;
   }
-}
-
-export function extractPickleballTournamentsDates(
-  text: string
-): { startDate: string | null; endDate: string | null } {
-  const result = { startDate: null as string | null, endDate: null as string | null };
-
-  const rangePattern =
-    /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*[-–]\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
-  const rangeMatch = text.match(rangePattern);
-
-  if (rangeMatch) {
-    result.startDate = parseDate(rangeMatch[1]);
-    result.endDate = parseDate(rangeMatch[2]);
-    return result;
-  }
-
-  const singlePattern = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
-  const singleMatch = text.match(singlePattern);
-
-  if (singleMatch) {
-    result.startDate = parseDate(singleMatch[1]);
-    result.endDate = result.startDate;
-  }
-
-  const monthRangePattern =
-    /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+(\d{1,2}),?\s*(\d{4})\s*[-–]\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+(\d{1,2}),?\s*(\d{4})/i;
-  const monthRangeMatch = text.match(monthRangePattern);
-
-  if (monthRangeMatch) {
-    const startStr = `${monthRangeMatch[1]} ${monthRangeMatch[2]}, ${monthRangeMatch[3]}`;
-    const endStr = `${monthRangeMatch[4]} ${monthRangeMatch[5]}, ${monthRangeMatch[6]}`;
-    result.startDate = parseDate(startStr);
-    result.endDate = parseDate(endStr);
-  }
-
-  return result;
-}
-
-export function extractPickleballTournamentsJsonData(
-  $: cheerio.Root
-): { tournaments?: unknown[] } {
-  const scripts = $('script');
-  let jsonData: { tournaments?: unknown[] } = {};
-
-  scripts.each((_, element) => {
-    const content = $(element).html() || '';
-    const match = content.match(/window\.__NEXT_DATA__\s*=\s*(\{.*?\})/);
-    if (match) {
-      try {
-        const data = JSON.parse(match[1]);
-        if (data.props?.pageProps) {
-          const pageProps = data.props.pageProps;
-          if (pageProps.tournaments) {
-            jsonData.tournaments = pageProps.tournaments;
-          } else if (pageProps.initialData?.tournaments) {
-            jsonData.tournaments = pageProps.initialData.tournaments;
-          }
-        }
-      } catch (e) {
-        // Ignore parse errors
-      }
-    }
-  });
-
-  return jsonData;
-}
-
-export function parsePickleballTournamentJson(t: unknown): ScrapedTournament | null {
-  if (!t || typeof t !== 'object') return null;
-
-  const tournament = t as Record<string, unknown>;
-  const name = sanitizeString(
-    (tournament.name as string) || (tournament.title as string)
-  );
-  const sourceUrl = sanitizeString(
-    (tournament.url as string) || (tournament.link as string)
-  );
-
-  if (!name || !sourceUrl) return null;
-
-  const fullUrl = sourceUrl.startsWith('http') ? sourceUrl : `${BASE_URL}${sourceUrl}`;
-
-  let location = '';
-  let city = '';
-  let state = '';
-
-  const venue = (tournament.venue as string) || '';
-  const cityStr = (tournament.city as string) || '';
-  const stateStr = (tournament.state as string) || '';
-
-  location = [venue, cityStr, stateStr].filter(Boolean).join(', ');
-  const cs = extractCityState(location);
-  city = cs.city || cityStr;
-  state = cs.state || stateStr;
-
-  let startDate = '';
-  let endDate = '';
-
-  const startDateVal =
-    (tournament.startDate as string) || (tournament.start_date as string);
-  const endDateVal =
-    (tournament.endDate as string) || (tournament.end_date as string);
-
-  if (startDateVal) {
-    const parsedStart = parseDate(startDateVal);
-    const parsedEnd = endDateVal ? parseDate(endDateVal) : null;
-    startDate = parsedStart || '';
-    endDate = parsedEnd || parsedStart || '';
-  }
-
-  const skillLevels = parseSkillLevels(JSON.stringify(tournament));
-
-  const description = sanitizeString(tournament.description as string);
-
-  let registrationUrl: string | undefined;
-  const regUrl =
-    (tournament.registrationUrl as string) ||
-    (tournament.registration_url as string);
-  if (regUrl) {
-    registrationUrl = regUrl.startsWith('http') ? regUrl : `${BASE_URL}${regUrl}`;
-  }
-
-  return createTournament(SOURCE_NAME, {
-    name,
-    sourceUrl: fullUrl,
-    location,
-    city,
-    state,
-    startDate,
-    endDate,
-    skillLevels,
-    description,
-    registrationUrl,
-  });
 }
 
 export const pickleballTournamentsScraper: Scraper = {

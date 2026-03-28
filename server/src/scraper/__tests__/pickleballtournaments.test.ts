@@ -1,10 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import * as cheerio from 'cheerio';
-import {
-  extractPickleballTournamentsDates,
-  extractPickleballTournamentsJsonData,
-  parsePickleballTournamentJson,
-} from '../pickleballtournaments.js';
+import { parsePBTListDate } from '../pickleballtournaments.js';
+import { extractCityState, sanitizeString } from '../utils.js';
 
 vi.mock('puppeteer', () => ({
   default: {
@@ -12,6 +9,8 @@ vi.mock('puppeteer', () => ({
       newPage: vi.fn().mockResolvedValue({
         setUserAgent: vi.fn().mockResolvedValue(undefined),
         goto: vi.fn().mockResolvedValue(undefined),
+        waitForSelector: vi.fn().mockResolvedValue(undefined),
+        waitForFunction: vi.fn().mockResolvedValue(undefined),
         content: vi.fn().mockResolvedValue('<html><body></body></html>'),
         close: vi.fn().mockResolvedValue(undefined),
       }),
@@ -20,138 +19,112 @@ vi.mock('puppeteer', () => ({
   },
 }));
 
-describe('extractPickleballTournamentsDates', () => {
-  it('parses date range MM/DD/YYYY - MM/DD/YYYY', () => {
-    const result = extractPickleballTournamentsDates('01/15/2024 - 01/20/2024');
-    expect(result.startDate).toBe('2024-01-15');
-    expect(result.endDate).toBe('2024-01-20');
+describe('parsePBTListDate', () => {
+  it('parses a date range with hyphen', () => {
+    const result = parsePBTListDate('Apr 10, 2026 - Apr 12, 2026');
+    expect(result.startDate).toBe('2026-04-10');
+    expect(result.endDate).toBe('2026-04-12');
   });
 
-  it('parses single date', () => {
-    const result = extractPickleballTournamentsDates('01/15/2024');
-    expect(result.startDate).toBe('2024-01-15');
-    expect(result.endDate).toBe('2024-01-15');
+  it('parses same-day range', () => {
+    const result = parsePBTListDate('Apr 10, 2026 - Apr 10, 2026');
+    expect(result.startDate).toBe('2026-04-10');
+    expect(result.endDate).toBe('2026-04-10');
   });
 
-  it('parses month name range', () => {
-    const result = extractPickleballTournamentsDates('January 15, 2024 - January 20, 2024');
-    expect(result.startDate).toBe('2024-01-15');
-    expect(result.endDate).toBe('2024-01-20');
+  it('parses a date range with en-dash', () => {
+    const result = parsePBTListDate('Apr 10, 2026 \u2013 Apr 12, 2026');
+    expect(result.startDate).toBe('2026-04-10');
+    expect(result.endDate).toBe('2026-04-12');
   });
 
-  it('handles invalid input', () => {
-    const result = extractPickleballTournamentsDates('not a date');
+  it('parses single date (no range)', () => {
+    const result = parsePBTListDate('Apr 10, 2026');
+    expect(result.startDate).toBe('2026-04-10');
+    expect(result.endDate).toBe('2026-04-10');
+  });
+
+  it('returns nulls for empty string', () => {
+    const result = parsePBTListDate('');
+    expect(result.startDate).toBeNull();
+    expect(result.endDate).toBeNull();
+  });
+
+  it('returns nulls for garbage input', () => {
+    const result = parsePBTListDate('not a date at all!!!');
     expect(result.startDate).toBeNull();
     expect(result.endDate).toBeNull();
   });
 });
 
-describe('extractPickleballTournamentsJsonData', () => {
-  it('finds __NEXT_DATA__ script content', () => {
-    const html = `
-      <html>
-        <script>window.__NEXT_DATA__ = {"props":{}}</script>
-      </html>
-    `;
-    const $ = cheerio.load(html);
-    const result = extractPickleballTournamentsJsonData($);
-    
-    expect(result).toBeDefined();
+describe('card extraction from list page HTML', () => {
+  const CARD_HTML = `
+    <html><body>
+      <a class="block" href="https://pickleballtournaments.com/tournaments/test-open-2026">
+        <div class="group relative flex cursor-pointer flex-col rounded-xl border bg-white">
+          <div class="relative flex items-center">
+            <img alt="Test Open 2026" src="https://cdn.example.com/images/test-open.jpg" />
+          </div>
+          <div class="flex flex-1 flex-col">
+            <div class="!line-clamp-2 block text-sm font-medium text-gray-900"
+                 title="Test Open 2026">
+              Test Open 2026
+            </div>
+            <div class="line-clamp-1 text-sm text-gray-600">San Clemente, CA, USA</div>
+            <div class="text-sm line-clamp-1 text-gray-700">Apr 10, 2026 - Apr 12, 2026</div>
+            <div class="mt-2 flex">
+              <div class="bg-success-700">
+                <p class="text-sm font-semibold">USD $50</p>
+              </div>
+              <div class="text-xs flex text-gray-600">42 players</div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </body></html>
+  `;
+
+  it('extracts sourceUrl from card href', () => {
+    const $ = cheerio.load(CARD_HTML);
+    const card = $('a.block[href*="/tournaments/"]').first();
+    const href = card.attr('href')!;
+    const sourceUrl = href.startsWith('http') ? href : `https://pickleballtournaments.com${href}`;
+    expect(sourceUrl).toBe('https://pickleballtournaments.com/tournaments/test-open-2026');
   });
 
-  it('finds __NEXT_DATA__ with initialData', () => {
-    const html = `
-      <html>
-        <script>window.__NEXT_DATA__ = {"props":{"pageProps":{"initialData":{}}}}</script>
-      </html>
-    `;
-    const $ = cheerio.load(html);
-    const result = extractPickleballTournamentsJsonData($);
-    
-    expect(result).toBeDefined();
+  it('extracts tournament name via title attribute', () => {
+    const $ = cheerio.load(CARD_HTML);
+    const card = $('a.block[href*="/tournaments/"]').first();
+    const nameEl = card.find('div[class*="line-clamp-2"][class*="font-medium"]');
+    const name = sanitizeString(nameEl.attr('title') || nameEl.text());
+    expect(name).toBe('Test Open 2026');
   });
 
-  it('returns empty object for no data', () => {
-    const html = '<html><body>No data</body></html>';
-    const $ = cheerio.load(html);
-    const result = extractPickleballTournamentsJsonData($);
-    
-    expect(result.tournaments).toBeUndefined();
-  });
-});
-
-describe('parsePickleballTournamentJson', () => {
-  it('parses valid tournament object', () => {
-    const tournament = {
-      name: 'Test Tournament',
-      url: '/tournaments/test',
-      startDate: '2024-01-15',
-      endDate: '2024-01-20',
-    };
-    
-    const result = parsePickleballTournamentJson(tournament);
-    
-    expect(result).not.toBeNull();
-    expect(result?.name).toBe('Test Tournament');
-    expect(result?.source).toBe('pickleballtournaments.com');
+  it('extracts and parses location', () => {
+    const $ = cheerio.load(CARD_HTML);
+    const card = $('a.block[href*="/tournaments/"]').first();
+    const locationEl = card.find('div.line-clamp-1.text-sm.text-gray-600');
+    const locationText = sanitizeString(locationEl.text());
+    expect(locationText).toBe('San Clemente, CA, USA');
+    const { city, state } = extractCityState(locationText);
+    expect(city).toBe('San Clemente');
+    expect(state).toBe('CA');
   });
 
-  it('parses tournament with different field names', () => {
-    const tournament = {
-      title: 'Another Tournament',
-      link: '/events/123',
-      start_date: '2024-02-01',
-    };
-    
-    const result = parsePickleballTournamentJson(tournament);
-    
-    expect(result).not.toBeNull();
-    expect(result?.name).toBe('Another Tournament');
+  it('extracts and parses dates', () => {
+    const $ = cheerio.load(CARD_HTML);
+    const card = $('a.block[href*="/tournaments/"]').first();
+    const dateEl = card.find('div.text-sm.line-clamp-1.text-gray-700');
+    const dateText = sanitizeString(dateEl.text());
+    const { startDate, endDate } = parsePBTListDate(dateText);
+    expect(startDate).toBe('2026-04-10');
+    expect(endDate).toBe('2026-04-12');
   });
 
-  it('returns null for invalid tournament', () => {
-    expect(parsePickleballTournamentJson(null)).toBeNull();
-    expect(parsePickleballTournamentJson('string')).toBeNull();
-    expect(parsePickleballTournamentJson({})).toBeNull();
-  });
-
-  it('handles missing name gracefully', () => {
-    const tournament = {
-      url: '/tournaments/test',
-    };
-    
-    const result = parsePickleballTournamentJson(tournament);
-    expect(result).toBeNull();
-  });
-
-  it('handles missing url gracefully', () => {
-    const tournament = {
-      name: 'Test',
-    };
-    
-    const result = parsePickleballTournamentJson(tournament);
-    expect(result).toBeNull();
-  });
-
-  it('constructs full URL correctly', () => {
-    const tournament = {
-      name: 'Test',
-      url: '/tournaments/123',
-    };
-    
-    const result = parsePickleballTournamentJson(tournament);
-    
-    expect(result?.sourceUrl).toBe('https://pickleballtournaments.com/tournaments/123');
-  });
-
-  it('handles URL with http prefix', () => {
-    const tournament = {
-      name: 'Test',
-      url: 'https://other.com/tournaments/123',
-    };
-    
-    const result = parsePickleballTournamentJson(tournament);
-    
-    expect(result?.sourceUrl).toBe('https://other.com/tournaments/123');
+  it('extracts image URL', () => {
+    const $ = cheerio.load(CARD_HTML);
+    const card = $('a.block[href*="/tournaments/"]').first();
+    const imageUrl = card.find('img').first().attr('src');
+    expect(imageUrl).toBe('https://cdn.example.com/images/test-open.jpg');
   });
 });
